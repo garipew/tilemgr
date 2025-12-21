@@ -18,15 +18,20 @@ public class Canvas
 		return this.DrawableLayer.GetLength(0);
 	}
 
+	public byte GetTile(int x, int y)
+	{
+		return this.DrawableLayer[y, x];
+	}
+
 	public int GetWidth()
 	{
 		return this.DrawableLayer.GetLength(1);
 	}
 
-	public string update_tile(int x, int y, byte tile)
+	public (int x, int y, byte tile) UpdateTile(int x, int y, byte tile)
 	{
 		this.DrawableLayer[y,x] = tile;
-		return $"({x}, {y}, {this.DrawableLayer[y,x]})"; 
+		return (x, y, this.DrawableLayer[y,x]);
 	}
 
 	private byte[] compress()
@@ -65,7 +70,7 @@ public class Canvas
 		return compressed;
 	}
 
-	public void export(string filename)
+	public void Export(string filename)
 	{
 		byte[] compressed = compress();
 		byte[] slice = compressed[0..4];
