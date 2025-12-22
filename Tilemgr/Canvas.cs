@@ -6,7 +6,7 @@ namespace Tilemgr;
 public class Canvas
 {
 	private byte[,] DrawableLayer;
-	private static byte Prologue = 4;
+	private static readonly byte _prologue = 4;
 
 	public Canvas(int wid, int hei)
 	{
@@ -42,9 +42,9 @@ public class Canvas
 		int hei = this.DrawableLayer.GetLength(0);
 		int wid = this.DrawableLayer.GetLength(1);
 
-		int max_size = (2 * hei * wid) + Prologue;
+		int max_size = (2 * hei * wid) + _prologue;
 		byte[] compressed = new byte[max_size];
-		int current = Prologue;
+		int current = _prologue;
 		foreach(int tile in this.DrawableLayer)
 		{
 			if(last == tile && count < 0xff)
@@ -78,12 +78,12 @@ public class Canvas
 		{
 			Array.Reverse(slice);
 		}
-		int size = BitConverter.ToInt32(slice, 0) - Prologue;
+		int size = BitConverter.ToInt32(slice, 0) - _prologue;
 		using(var f = File.Create(filename))
 		{
 			using(var writer = new BinaryWriter(f))
 			{
-				writer.Write(compressed, Prologue, size);
+				writer.Write(compressed, _prologue, size);
 			}
 		}
 	}
