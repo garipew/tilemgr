@@ -1,6 +1,9 @@
 using System;
 using System.Net.WebSockets;
+
+using Pagemgr;
 using Tilemgr;
+using Handler;
 
 if(args.Length < 1)
 {
@@ -8,15 +11,14 @@ if(args.Length < 1)
 	return;
 }
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<PageManager<Project>>();
+
 var app = builder.Build();
 
 app.UseWebSockets();
 
-var projectHandler = new ProjectHandler(10, 10);
-projectHandler.project.ImportPalette(args[0], 16, 16);
-projectHandler.project.report();
-
-app.Map("/projects", projectHandler.Handle);
+app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => ProjectHandler.Handle(c, cToken, mgr));
+app.MapGet("/projects/{hash}", (string hash, HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => ProjectHandler.Handle(hash, c, cToken, mgr));
 
 // TODO(garipew): Rota /new que é responsável por criar um novo projeto e
 // então redirecionar até ele.
