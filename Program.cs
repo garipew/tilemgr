@@ -17,14 +17,17 @@ var app = builder.Build();
 
 app.UseWebSockets();
 
+app.MapGet("/", () => {
+		var html = @"
+		<a href=/projects> Browse Projects </a>
+		<br>
+		<a href=/new> New Project </a>";
+		return Results.Content(html, "text/html");});
+
 app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => ProjectHandler.Handle(c, cToken, mgr));
 app.MapGet("/projects/{hash}", (string hash, HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => ProjectHandler.Handle(hash, c, cToken, mgr));
 
 // TODO(garipew): Rota /new que é responsável por criar um novo projeto e
 // então redirecionar até ele.
 
-// TODO(garipew): Rota / que apresenta opções "Browse Projects" e
-// "Create new".
-// Como cada opção tem sua rota específica, talvez não tenha necessidade de
-// uma rota / aqui?
 app.Run();
