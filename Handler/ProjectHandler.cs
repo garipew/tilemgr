@@ -48,11 +48,12 @@ public static class ProjectHandler
 					CancellationToken.None);
 		}
 	}
-	public static IResult Handle(HttpContext c, CancellationToken cToken, PageManager<Project> mgr)
+	public static List<Project> Handle(HttpContext c, CancellationToken cToken, PageManager<Project> mgr)
 	{
-		// TODO(garipew): Return list of all projects in DB, empty list
-		// **IS** valid
-		return Results.Ok("Hello, World!");
+		var projects = Project.Load();
+		// TODO(garipew): Get pages in memory from PageManager, to
+		// also display connections.
+		return projects;
 	}
 
 	public static async Task Handle(string hash, HttpContext c, CancellationToken cToken, PageManager<Project> mgr)
