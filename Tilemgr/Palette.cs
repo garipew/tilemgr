@@ -3,15 +3,33 @@ using System.Buffers.Binary;
 
 namespace Tilemgr;
 
-public class Palette
+public class Palette : ILoadable<Palette>
 {
 	private string img_path;
+	private int tile_wid;
+	private int tile_hei;
 	public Frame[]? frames;
 
 	public Palette(string img_path, int tile_wid, int tile_hei)
 	{
 		this.img_path = img_path;
-		this.frames = load_frames(img_path, tile_wid, tile_hei);
+		this.tile_wid = tile_wid;
+		this.tile_hei = tile_hei;
+		this.frames = load_frames(img_path);
+	}
+
+	public static Palette? Load(Context c)
+	{
+		if(!File.Exists(c.lookup) || c.tile_wid == null || c.tile_hei == null)
+		{
+			return null;
+		}
+		return new Palette(c.lookup, c.tile_wid.Value, c.tile_hei.Value);
+	}
+
+	public static void Save(Palette p)
+	{
+		return;
 	}
 
 	private (int wid, int hei)? get_png_dimensions(string img_path)
@@ -43,7 +61,7 @@ public class Palette
 		return (img_wid, img_hei);
 	}
 
-	private Frame[]? load_frames(string img_path, int tile_wid, int tile_hei)
+	private Frame[]? load_frames(string img_path)
 	{
 		var dimensions = get_png_dimensions(img_path);
 		if(dimensions == null)
@@ -57,7 +75,7 @@ public class Palette
 		int y = 0;
 		for(int current = 0; current < count && y < img_hei; current++)
 		{
-			frames[current] = new Frame(x, y, tile_wid, tile_hei);
+			frames[current] = new Frame(x, y);
 			x += tile_wid;
 			if(x >= img_wid)
 			{

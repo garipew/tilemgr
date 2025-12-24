@@ -4,13 +4,9 @@ public class Frame
 {
 	int x;
 	int y;
-	int wid;
-	int hei;
-	public Frame(int x, int y, int wid, int hei)
+	public Frame(int x, int y)
 	{
 		this.x = x;
 		this.y = y;
-		this.wid = wid;
-		this.hei = hei;
 	}
 }
