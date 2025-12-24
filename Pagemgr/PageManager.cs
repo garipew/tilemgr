@@ -10,6 +10,7 @@ public class PageManager<T> where T : ILoadable<T>
 
 	public Page<T> GetOrCreate(string hash)
 	{
-		return _pages.GetOrAdd(hash, _ => new Page<T>(T.Pull(hash)));
+		T? obj = T.Load(new Context(hash));
+		return _pages.GetOrAdd(hash, new Page<T>(obj));
 	}
 }
