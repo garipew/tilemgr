@@ -3,8 +3,8 @@ namespace Tilemgr;
 public class Context
 {
 	public string lookup;
-	public int? tile_wid;
-	public int? tile_hei;
+	public int? TileWid;
+	public int? TileHei;
 
 	public Context(string l)
 	{
@@ -14,8 +14,8 @@ public class Context
 	public Context(string l, int? w, int? h)
 	{
 		lookup = l;
-		tile_wid = w;
-		tile_hei = h;
+		TileWid = w;
+		TileHei = h;
 	}
 }
 
@@ -23,5 +23,5 @@ public interface ILoadable<TSelf>
 	where TSelf : ILoadable<TSelf>
 {
 	static abstract TSelf? Load(Context c);
-	static abstract void Save(TSelf obj);
+	static abstract Context Save(TSelf obj);
 }

@@ -6,30 +6,30 @@ namespace Tilemgr;
 public class Palette : ILoadable<Palette>
 {
 	private string img_path;
-	private int tile_wid;
-	private int tile_hei;
+	private int TileWid;
+	private int TileHei;
 	public Frame[]? frames;
 
-	public Palette(string img_path, int tile_wid, int tile_hei)
+	public Palette(string img_path, int TileWid, int TileHei)
 	{
 		this.img_path = img_path;
-		this.tile_wid = tile_wid;
-		this.tile_hei = tile_hei;
+		this.TileWid = TileWid;
+		this.TileHei = TileHei;
 		this.frames = load_frames(img_path);
 	}
 
 	public static Palette? Load(Context c)
 	{
-		if(!File.Exists(c.lookup) || c.tile_wid == null || c.tile_hei == null)
+		if(!File.Exists(c.lookup) || c.TileWid == null || c.TileHei == null)
 		{
 			return null;
 		}
-		return new Palette(c.lookup, c.tile_wid.Value, c.tile_hei.Value);
+		return new Palette(c.lookup, c.TileWid.Value, c.TileHei.Value);
 	}
 
-	public static void Save(Palette p)
+	public static Context Save(Palette p)
 	{
-		return;
+		return new Context("placeholder");
 	}
 
 	private (int wid, int hei)? get_png_dimensions(string img_path)
@@ -69,18 +69,18 @@ public class Palette : ILoadable<Palette>
 			return null;
 		}
 		(int img_wid, int img_hei) = dimensions.Value;
-		int count = (img_wid / tile_wid) * (img_hei / tile_hei);
+		int count = (img_wid / TileWid) * (img_hei / TileHei);
 		Frame[] frames = new Frame[count];
 		int x = 0;
 		int y = 0;
 		for(int current = 0; current < count && y < img_hei; current++)
 		{
 			frames[current] = new Frame(x, y);
-			x += tile_wid;
+			x += TileWid;
 			if(x >= img_wid)
 			{
 				x = 0;
-				y += tile_hei;
+				y += TileHei;
 			}
 		}
 		return frames;

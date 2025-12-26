@@ -54,9 +54,9 @@ public class Canvas : ILoadable<Canvas>
 		return new Canvas(decompress(compressed));
 	}
 
-	public static void Save(Canvas obj)
+	public static Context Save(Canvas obj)
 	{
-		return;
+		return new Context("placeholder");
 	}
 
 	public Int32 GetHeight()
