@@ -7,11 +7,20 @@ public class Canvas : ILoadable<Canvas>
 {
 	public byte[,] DrawableLayer;
 	private static readonly byte _prologue = 8;
+	public readonly string Name;
 
-	public Canvas(Int32 wid, Int32 hei)
+	public Canvas(Int32 wid, Int32 hei, string name)
 	{
 		this.DrawableLayer = new byte[hei,wid];
+		this.Name = name;
 	}
+
+	public Canvas(byte[,] drawable, string name)
+	{
+		this.DrawableLayer = drawable;
+		this.Name = name;
+	}
+
 
 	public bool IsEqual(Object? obj)
 	{
@@ -39,11 +48,6 @@ public class Canvas : ILoadable<Canvas>
 		return true;
 	}
 
-	public Canvas(byte[,] drawable)
-	{
-		this.DrawableLayer = drawable;
-	}
-
 	public static Canvas? Load(Context c)
 	{
 		if(!File.Exists(c.lookup))
@@ -51,12 +55,14 @@ public class Canvas : ILoadable<Canvas>
 			return null;
 		}
 		byte[] compressed = File.ReadAllBytes(c.lookup);
-		return new Canvas(decompress(compressed));
+		return new Canvas(decompress(compressed), c.lookup);
 	}
 
 	public static Context Save(Canvas obj)
 	{
-		return new Context("placeholder");
+		var compressed = Canvas.compress(obj.DrawableLayer);
+		File.WriteAllBytes(obj.Name, compressed);
+		return new Context(obj.Name);
 	}
 
 	public Int32 GetHeight()
