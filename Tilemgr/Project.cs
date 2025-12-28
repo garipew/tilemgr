@@ -68,12 +68,6 @@ public class Project : ILoadable<Project>
 		conn.Open();
 		
 		using var cmd = conn.CreateCommand();
-		// TODO(garipew): Decide on the actual layout of the table,
-		// PalettePath, TileWid and TileHei can be all packed into a
-		// single json "Palette" for instance. It's also possible to
-		// also include the canvas dimensions in the DB, instead of
-		// packing it on the binary? Though this would require changes
-		// in other places.
 		cmd.CommandText = "SELECT CanvasPath,PalettePath,TileWid,TileHei,CreationDate,ProjectName FROM Projects";
 
 		List<Project> projects = new();
@@ -124,69 +118,108 @@ public class Project : ILoadable<Project>
 		var name_bytes = Encoding.UTF8.GetBytes(this.ProjectName);
 		var all_bytes = date_bytes.Concat(name_bytes).ToArray();
 
-		var hash = new MD5CryptoServiceProvider().ComputeHash(all_bytes);
+		var hash = MD5.Create().ComputeHash(all_bytes);
 		return HexToString(hash);
+	}
+
+	private static void Create(Project p, string hash, Context canvas, Context? palette, SqliteConnection conn)
+	{
+		using var insert = conn.CreateCommand();
+		insert.CommandText = @"INSERT INTO Projects
+			(Hash, CanvasPath, PalettePath, TileWid, TileHei, CreationDate, ProjectName)
+			VALUES ($hash, $c_path, $p_path, $wid, $hei, $date, $name)";
+		insert.Parameters.AddWithValue("$date", p.CreationDate);
+		insert.Parameters.AddWithValue("$name", p.ProjectName);
+		if(palette == null)
+		{
+			insert.Parameters.AddWithValue("$p_path", "missing");
+			insert.Parameters.AddWithValue("$wid", -1);
+			insert.Parameters.AddWithValue("$hei", -1);
+		} else{
+			insert.Parameters.AddWithValue("$p_path", palette.lookup);
+			insert.Parameters.AddWithValue("$wid", palette.TileWid);
+			insert.Parameters.AddWithValue("$hei", palette.TileHei);
+		}
+		insert.Parameters.AddWithValue("$c_path", canvas.lookup);
+		insert.Parameters.AddWithValue("$hash", hash);
+		insert.ExecuteNonQuery();
+	}
+
+	private static void Update(Project p, string hash, Context canvas, Context? palette, SqliteConnection conn)
+	{
+		using var update = conn.CreateCommand();
+		update.CommandText = @"
+			UPDATE Projects
+			SET CreationDate = $date,
+			ProjectName = $name,
+			CanvasPath = $c_path,
+			PalettePath = $p_path
+			WHERE Hash = $hash";
+		update.Parameters.AddWithValue("$date", p.CreationDate);
+		update.Parameters.AddWithValue("$name", p.ProjectName);
+		if(palette == null)
+		{
+			update.Parameters.AddWithValue("$p_path", "missing");
+		} else{
+			update.Parameters.AddWithValue("$p_path", palette.lookup);
+		}
+		update.Parameters.AddWithValue("$c_path", canvas.lookup);
+		update.Parameters.AddWithValue("$hash", hash);
+		update.ExecuteNonQuery();
+	}
+
+	public static bool QueryPerfectMatch(Project p, Context c, SqliteConnection conn)
+	{
+		using var perfect = conn.CreateCommand();
+		perfect.CommandText = @"SELECT * FROM Projects
+			WHERE Hash = $lookup AND
+			CreationDate = $date AND
+			ProjectName = $name";
+		perfect.Parameters.AddWithValue("$lookup", c.lookup);
+		perfect.Parameters.AddWithValue("$date", p.CreationDate);
+		perfect.Parameters.AddWithValue("$name", p.ProjectName);
+
+		using var reader = perfect.ExecuteReader();
+		return reader.Read();
 	}
 
 	public static Context Save(Project p)
 	{
 		string hash = p.Hash();
 		var c_context = Canvas.Save(p.canvas);
-		var p_context = Palette.Save(p.palette);
-		// TODO(garipew): Update a DB entry, possibly creating it.
-		//
-		// If the hash already exist, but ProjectName OR CreationDate
-		// doesn't match, it's a collision. The way we load from the DB
-		// has to reflect the way we handle collisions.
+		Context? p_context = null;
+		if(p.palette != null)
+		{
+			p_context = Palette.Save(p.palette);
+		}
 		var c = new Context(hash);
 
 		using var conn = new SqliteConnection("Data Source=data.db");
 		conn.Open();
 
-		// TODO(garipew): Move this to startup, instead of repeating
-		// at every Save. 
-		using var create = conn.CreateCommand();
-		create.CommandText = @" CREATE TABLE IF NOT EXISTS Projects (
-					Hash varchar(255),
-					CanvasPath varchar(255),
-					PalettePath varchar(255),
-					TileWid int,
-					TileHei int,
-					CreationDate datetime(default),
-					ProjectName varchar(255))";
-		create.ExecuteNonQuery();
-
-		using var cmd = conn.CreateCommand();
-		cmd.CommandText = "SELECT CreationDate,ProjectName FROM Projects WHERE Hash = $lookup";
-		cmd.Parameters.AddWithValue("$lookup", c.lookup);
-
-		SqliteDataReader reader;
-		using var reader = cmd.ExecuteReader();
-		if(!reader.Read())
+		for(int tries = 0; tries < 2; tries++)
 		{
-			// TODO(garipew): Entry does not exist, create
-			// new.
-		} else
-		{
-			// TODO(garipew): Entry does exist, check if
-			// CreationDate and ProjectName match. If not, handle
-			// collision, if so, update.
-			//
-			if(reader.IsDBNull(0) || reader.IsDBNull(1))
+			if(QueryPerfectMatch(p, c, conn))
 			{
-				// Malformed
-			}
-			if(reader.GetDateTime(0).Equals(p.CreationDate) &&
-				reader.GetString(0).Equals(p.ProjectName))
-			{
-				cmd.CommandText = @"
-					UPDATE Projects
-					SET CanvasPath = $c_path,
-					SET PalettePath = $p_path";
+				Update(p, c.lookup, c_context, p_context, conn);
 				return c;
 			}
+			using var partial = conn.CreateCommand();
+			partial.CommandText = @"SELECT ProjectName,CreationDate
+				FROM Projects
+				WHERE Hash = $lookup";
+			partial.Parameters.AddWithValue("$lookup", c.lookup);
+
+			using var reader = partial.ExecuteReader();
+			if(!reader.Read())
+			{
+				// No match.
+				break;
+			}
+			c.lookup += p.ProjectName;
 		}
 
+		Create(p, c.lookup, c_context, p_context, conn);
 		return c;
 	}
 

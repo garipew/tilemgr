@@ -1,9 +1,24 @@
 using System;
 using System.Net.WebSockets;
+using Microsoft.Data.Sqlite;
 
 using Pagemgr;
 using Tilemgr;
 using Handler;
+
+using var conn = new SqliteConnection("Data Source=data.db");
+conn.Open();
+
+using var create = conn.CreateCommand();
+create.CommandText = @" CREATE TABLE IF NOT EXISTS Projects (
+		Hash varchar(255),
+		CanvasPath varchar(255),
+		PalettePath varchar(255),
+		TileWid int,
+		TileHei int,
+		CreationDate datetime DEFAULT CURRENT_TIMESTAMP,
+		ProjectName varchar(255))";
+create.ExecuteNonQuery();
 
 if(args.Length < 1)
 {
