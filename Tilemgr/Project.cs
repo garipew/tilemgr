@@ -5,6 +5,8 @@ using Microsoft.Data.Sqlite;
 
 namespace Tilemgr;
 
+public record ProjectView(int TileWid, int TileHei, int Wid, int Hei, string name, string path, DateTime CreationDate);
+
 public class Project : ILoadable<Project>
 {
 	private Canvas canvas;
@@ -62,7 +64,7 @@ public class Project : ILoadable<Project>
 		return p;
 	}
 
-	public static List<Project> Load()
+	public static List<ProjectView> Load()
 	{
 		using var conn = new SqliteConnection("Data Source=data.db");
 		conn.Open();
@@ -70,14 +72,13 @@ public class Project : ILoadable<Project>
 		using var cmd = conn.CreateCommand();
 		cmd.CommandText = "SELECT CanvasPath,PalettePath,TileWid,TileHei,CreationDate,ProjectName FROM Projects";
 
-		List<Project> projects = new();
+		List<ProjectView> projects = new();
 		try
 		{
 			using var reader = cmd.ExecuteReader();
 			while(reader.Read())
 			{
-				if(!reader.Read() ||
-				reader.IsDBNull(0) ||
+				if(reader.IsDBNull(0) ||
 				reader.IsDBNull(1) ||
 				reader.IsDBNull(2) ||
 				reader.IsDBNull(3) ||
@@ -94,12 +95,33 @@ public class Project : ILoadable<Project>
 					continue;
 				}
 				var date = DateTime.Parse(reader.GetString(4));
-				projects.Add(new Project(canvas, reader.GetString(5), palette, date));
+				var t_wid = -1;
+				var t_hei = -1;
+				if(palette != null)
+				{
+					t_wid = palette.TileWid;
+					t_hei = palette.TileHei;
+				}
+				var p = new Project(canvas, reader.GetString(5), palette, date);
+				projects.Add(p.GetView());
 			}
 		} catch(Exception e){
 			System.Console.WriteLine(e.ToString());
 		}
 		return projects;
+	}
+
+	public ProjectView GetView()
+	{
+		var t_wid = -1;
+		var t_hei = -1;
+		if(palette != null)
+		{
+			t_wid = palette.TileWid;
+			t_hei = palette.TileHei;
+		}
+		var view = new ProjectView(t_wid, t_hei, canvas.GetWidth(), canvas.GetHeight(), ProjectName, "/projects/" + this.Hash(), CreationDate);
+		return view;
 	}
 
 	private string HexToString(byte[] input)
@@ -153,7 +175,9 @@ public class Project : ILoadable<Project>
 			SET CreationDate = $date,
 			ProjectName = $name,
 			CanvasPath = $c_path,
-			PalettePath = $p_path
+			PalettePath = $p_path,
+			TileWid = $wid,
+			TileHei = $hei
 			WHERE Hash = $hash";
 		update.Parameters.AddWithValue("$date", p.CreationDate);
 		update.Parameters.AddWithValue("$name", p.ProjectName);
@@ -162,6 +186,11 @@ public class Project : ILoadable<Project>
 			update.Parameters.AddWithValue("$p_path", "missing");
 		} else{
 			update.Parameters.AddWithValue("$p_path", palette.lookup);
+		}
+		if(p.palette != null)
+		{
+			update.Parameters.AddWithValue("$wid", p.palette.TileWid);
+			update.Parameters.AddWithValue("$hei", p.palette.TileHei);
 		}
 		update.Parameters.AddWithValue("$c_path", canvas.lookup);
 		update.Parameters.AddWithValue("$hash", hash);

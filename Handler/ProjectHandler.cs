@@ -48,11 +48,9 @@ public static class ProjectHandler
 					CancellationToken.None);
 		}
 	}
-	public static List<Project> Handle(HttpContext c, CancellationToken cToken, PageManager<Project> mgr)
+	public static List<ProjectView> Handle(HttpContext c, CancellationToken cToken, PageManager<Project> mgr)
 	{
 		var projects = Project.Load();
-		// TODO(garipew): Get pages in memory from PageManager, to
-		// also display connections.
 		return projects;
 	}
 
