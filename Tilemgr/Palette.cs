@@ -6,8 +6,8 @@ namespace Tilemgr;
 public class Palette : ILoadable<Palette>
 {
 	private string img_path;
-	private int TileWid;
-	private int TileHei;
+	public int TileWid;
+	public int TileHei;
 	public Frame[]? frames;
 
 	public Palette(string img_path, int TileWid, int TileHei)
@@ -27,9 +27,9 @@ public class Palette : ILoadable<Palette>
 		return new Palette(c.lookup, c.TileWid.Value, c.TileHei.Value);
 	}
 
-	public static Context Save(Palette p)
+	public static Context Save(Palette obj)
 	{
-		return new Context("placeholder");
+		return new Context(obj.img_path);
 	}
 
 	private (int wid, int hei)? get_png_dimensions(string img_path)

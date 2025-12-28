@@ -5,3 +5,6 @@
 
 # DBs
 *.db
+
+# Output
+*.canvas
