@@ -5,17 +5,17 @@ namespace Tilemgr;
 
 public class Palette : ILoadable<Palette>
 {
-	private string img_path;
+	public readonly string ImgPath;
 	public int TileWid;
 	public int TileHei;
 	public Frame[]? frames;
 
-	public Palette(string img_path, int TileWid, int TileHei)
+	public Palette(string ImgPath, int TileWid, int TileHei)
 	{
-		this.img_path = img_path;
+		this.ImgPath = ImgPath;
 		this.TileWid = TileWid;
 		this.TileHei = TileHei;
-		this.frames = load_frames(img_path);
+		this.frames = load_frames(ImgPath);
 	}
 
 	public static Palette? Load(Context c)
@@ -29,15 +29,18 @@ public class Palette : ILoadable<Palette>
 
 	public static Context Save(Palette obj)
 	{
-		return new Context(obj.img_path);
+		// TODO(garipew): To share tilesheet across projects,
+		// save TileWid, TileHei and ImgPath to a new table,
+		// "Palettes".
+		return new Context(obj.ImgPath, obj.TileWid, obj.TileHei);
 	}
 
-	private (int wid, int hei)? get_png_dimensions(string img_path)
+	private (int wid, int hei)? get_png_dimensions(string ImgPath)
 	{
 		int img_wid, img_hei;
 		byte[] signature = {137, 80, 78, 71, 13, 10, 26, 10};
 		byte[] ihdr = {0x49, 0x48, 0x44, 0x52};
-		using(var img_stream = new FileStream(img_path, FileMode.Open, FileAccess.Read))
+		using(var img_stream = new FileStream(ImgPath, FileMode.Open, FileAccess.Read))
 		{
 			using(var reader = new BinaryReader(img_stream))
 			{
@@ -61,9 +64,9 @@ public class Palette : ILoadable<Palette>
 		return (img_wid, img_hei);
 	}
 
-	private Frame[]? load_frames(string img_path)
+	private Frame[]? load_frames(string ImgPath)
 	{
-		var dimensions = get_png_dimensions(img_path);
+		var dimensions = get_png_dimensions(ImgPath);
 		if(dimensions == null)
 		{
 			return null;

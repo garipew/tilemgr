@@ -9,12 +9,12 @@ public record ProjectView(int TileWid, int TileHei, int Wid, int Hei, string nam
 
 public class Project : ILoadable<Project>
 {
-	private Canvas canvas;
-	private Palette? palette;
+	public Canvas canvas;
+	public Palette palette;
 	private readonly DateTime CreationDate;
 	private readonly string ProjectName;
 
-	public Project(Canvas c, string name, Palette? p = null, DateTime d = default){
+	public Project(Canvas c, string name, Palette p, DateTime d = default){
 		this.canvas = c;
 		this.ProjectName = name;
 		this.palette = p;
@@ -52,7 +52,7 @@ public class Project : ILoadable<Project>
 
 			var canvas = Canvas.Load(new Context(reader.GetString(0)));
 			var palette = Palette.Load(new Context(reader.GetString(1), reader.GetInt32(2), reader.GetInt32(3)));
-			if(canvas == null)
+			if(canvas == null || palette == null)
 			{
 				return null;
 			}
@@ -90,18 +90,11 @@ public class Project : ILoadable<Project>
 
 				var canvas = Canvas.Load(new Context(reader.GetString(0)));
 				var palette = Palette.Load(new Context(reader.GetString(1), reader.GetInt32(2), reader.GetInt32(3)));
-				if(canvas == null)
+				if(canvas == null || palette == null)
 				{
 					continue;
 				}
 				var date = DateTime.Parse(reader.GetString(4));
-				var t_wid = -1;
-				var t_hei = -1;
-				if(palette != null)
-				{
-					t_wid = palette.TileWid;
-					t_hei = palette.TileHei;
-				}
 				var p = new Project(canvas, reader.GetString(5), palette, date);
 				projects.Add(p.GetView());
 			}
@@ -113,13 +106,8 @@ public class Project : ILoadable<Project>
 
 	public ProjectView GetView()
 	{
-		var t_wid = -1;
-		var t_hei = -1;
-		if(palette != null)
-		{
-			t_wid = palette.TileWid;
-			t_hei = palette.TileHei;
-		}
+		var t_wid = palette.TileWid;
+		var t_hei = palette.TileHei;
 		var view = new ProjectView(t_wid, t_hei, canvas.GetWidth(), canvas.GetHeight(), ProjectName, "/projects/" + this.Hash(), CreationDate);
 		return view;
 	}
@@ -129,7 +117,7 @@ public class Project : ILoadable<Project>
 		StringBuilder output = new StringBuilder(input.Length);
 		for (int i = 0; i < input.Length; i++)
 		{
-			output.Append(input[i].ToString("X2"));
+			output.Append(input[i].ToString("x2"));
 		}
 		return output.ToString();
 	}
@@ -144,31 +132,30 @@ public class Project : ILoadable<Project>
 		return HexToString(hash);
 	}
 
-	private static void Create(Project p, string hash, Context canvas, Context? palette, SqliteConnection conn)
+	private static void Create(Project p, string hash, Context canvas, Context palette, SqliteConnection conn)
 	{
+		// TODO(garipew): To share tilesheets across projects, 
+		// remove TileWid, TileHei and PalettePath
+		// from here, substitute it to palette_id.
 		using var insert = conn.CreateCommand();
 		insert.CommandText = @"INSERT INTO Projects
 			(Hash, CanvasPath, PalettePath, TileWid, TileHei, CreationDate, ProjectName)
 			VALUES ($hash, $c_path, $p_path, $wid, $hei, $date, $name)";
+		insert.Parameters.AddWithValue("$hash", hash);
+		insert.Parameters.AddWithValue("$c_path", canvas.lookup);
+		insert.Parameters.AddWithValue("$p_path", palette.lookup);
+		insert.Parameters.AddWithValue("$wid", palette.TileWid ?? -1);
+		insert.Parameters.AddWithValue("$hei", palette.TileHei ?? -1);
 		insert.Parameters.AddWithValue("$date", p.CreationDate);
 		insert.Parameters.AddWithValue("$name", p.ProjectName);
-		if(palette == null)
-		{
-			insert.Parameters.AddWithValue("$p_path", "missing");
-			insert.Parameters.AddWithValue("$wid", -1);
-			insert.Parameters.AddWithValue("$hei", -1);
-		} else{
-			insert.Parameters.AddWithValue("$p_path", palette.lookup);
-			insert.Parameters.AddWithValue("$wid", palette.TileWid);
-			insert.Parameters.AddWithValue("$hei", palette.TileHei);
-		}
-		insert.Parameters.AddWithValue("$c_path", canvas.lookup);
-		insert.Parameters.AddWithValue("$hash", hash);
 		insert.ExecuteNonQuery();
 	}
 
-	private static void Update(Project p, string hash, Context canvas, Context? palette, SqliteConnection conn)
+	private static void Update(Project p, string hash, Context canvas, Context palette, SqliteConnection conn)
 	{
+		// TODO(garipew): To share tilesheets across projects, 
+		// remove TileWid, TileHei and PalettePath
+		// from here, substitute it to palette_id.
 		using var update = conn.CreateCommand();
 		update.CommandText = @"
 			UPDATE Projects
@@ -181,17 +168,9 @@ public class Project : ILoadable<Project>
 			WHERE Hash = $hash";
 		update.Parameters.AddWithValue("$date", p.CreationDate);
 		update.Parameters.AddWithValue("$name", p.ProjectName);
-		if(palette == null)
-		{
-			update.Parameters.AddWithValue("$p_path", "missing");
-		} else{
-			update.Parameters.AddWithValue("$p_path", palette.lookup);
-		}
-		if(p.palette != null)
-		{
-			update.Parameters.AddWithValue("$wid", p.palette.TileWid);
-			update.Parameters.AddWithValue("$hei", p.palette.TileHei);
-		}
+		update.Parameters.AddWithValue("$p_path", palette.lookup);
+		update.Parameters.AddWithValue("$wid", p.palette.TileWid);
+		update.Parameters.AddWithValue("$hei", p.palette.TileHei);
 		update.Parameters.AddWithValue("$c_path", canvas.lookup);
 		update.Parameters.AddWithValue("$hash", hash);
 		update.ExecuteNonQuery();
@@ -216,11 +195,10 @@ public class Project : ILoadable<Project>
 	{
 		string hash = p.Hash();
 		var c_context = Canvas.Save(p.canvas);
-		Context? p_context = null;
-		if(p.palette != null)
-		{
-			p_context = Palette.Save(p.palette);
-		}
+		// TODO(garipew): To share palettes across projects,
+		// update this to a claim.
+		// Only include the palette id on "Palettes" table.
+		Context p_context = Palette.Save(p.palette);
 		var c = new Context(hash);
 
 		using var conn = new SqliteConnection("Data Source=data.db");
@@ -259,7 +237,7 @@ public class Project : ILoadable<Project>
 
 	public int countPalette()
 	{
-		if(this.palette == null || this.palette.frames == null)
+		if(this.palette.frames == null)
 		{
 			return 0;
 		}
@@ -273,10 +251,6 @@ public class Project : ILoadable<Project>
 			return null;
 		}
 		if(x >= this.canvas.GetWidth() || x < 0)
-		{
-			return null;
-		}
-		if(this.palette == null)
 		{
 			return null;
 		}
@@ -295,7 +269,7 @@ public class Project : ILoadable<Project>
 	public void report()
 	{
 		System.Console.WriteLine($"Canvas dimensions: {this.canvas.GetWidth()}, {this.canvas.GetHeight()}");
-		if(this.palette == null || this.palette.frames == null)
+		if(this.palette.frames == null)
 		{
 			return;
 		}

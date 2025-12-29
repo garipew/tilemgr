@@ -9,6 +9,12 @@ public class Canvas : ILoadable<Canvas>
 	private static readonly byte _prologue = 8;
 	public readonly string Name;
 
+	public Canvas(string name, Int32 wid, Int32 hei)
+	{
+		this.DrawableLayer = new byte[hei,wid];
+		this.Name = name;
+	}
+
 	public Canvas(Int32 wid, Int32 hei, string name)
 	{
 		this.DrawableLayer = new byte[hei,wid];

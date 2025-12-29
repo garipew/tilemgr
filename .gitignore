@@ -7,4 +7,4 @@
 *.db
 
 # Output
-*.canvas
+uploads
