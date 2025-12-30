@@ -8,6 +8,7 @@ public class PageManager<T> where T : ILoadable<T>
 {
 	private readonly ConcurrentDictionary<string, Page<T>> _pages = new();
 
+	public bool TryGet(string key, out Page<T>? p) => _pages.TryGetValue(key, out p);
 	public Page<T> GetOrCreate(string hash)
 	{
 		T? obj = T.Load(new Context(hash));

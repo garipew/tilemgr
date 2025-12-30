@@ -12,7 +12,7 @@ public class Project : ILoadable<Project>
 	public Canvas canvas;
 	public Palette palette;
 	private readonly DateTime CreationDate;
-	private readonly string ProjectName;
+	public readonly string ProjectName;
 
 	public Project(Canvas c, string name, Palette p, DateTime d = default){
 		this.canvas = c;

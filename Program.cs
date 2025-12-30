@@ -10,6 +10,11 @@ using var conn = new SqliteConnection("Data Source=data.db");
 conn.Open();
 
 using var create = conn.CreateCommand();
+// TODO(garipew): Update properties of columns,
+// varchar -> TEXT,
+// Hash should be PRIMARY,
+// Name should be UNIQUE (this would also result on Paths being unique, since
+// they are created using name).
 create.CommandText = @" CREATE TABLE IF NOT EXISTS Projects (
 		Hash varchar(255),
 		CanvasPath varchar(255),
@@ -99,6 +104,28 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 	});
 
 app.MapGet("/projects/{hash}", async (string hash, HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => await ProjectHandler.Handle(hash, c, cToken, mgr));
+
+app.MapGet("/projects/{hash}/export", (string hash, HttpContext c, PageManager<Project> mgr) =>
+	{
+		Page<Project>? page = null;
+		Project? p = null;
+		mgr.TryGet(hash, out page);
+		if(page != null)
+		{
+			p = page.Data; // <- This is recoverable, project could exist on db
+		}
+
+		p ??= Project.Load(new Context(hash)); // <- This is unrecoverable.
+		if(p == null)
+		{
+			return Results.NotFound($"Project {hash} does not exist.");
+		}
+		Canvas.Save(p.canvas);
+		var stream = File.OpenRead(p.canvas.Name);
+		return Results.File(stream,
+				"application/octet-stream",
+				fileDownloadName: $"{p.ProjectName}_canvas.bin");
+	});
 
 // TODO(garipew): To share palettes across projects,
 // add /palettes and /palettes/new endpoint.
