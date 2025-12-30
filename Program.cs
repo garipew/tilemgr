@@ -75,22 +75,27 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 		{
 			return Results.BadRequest("Tilesheet required.");
 		}
-		using var stream = new FileStream($"uploads/{name}_atlas.png", FileMode.Create);
+		string output_root = "uploads";
+		if(!Directory.Exists(output_root))
+		{
+			Directory.CreateDirectory(output_root);
+		}
+		var palette_path = Path.Combine(output_root, $"{name}_atlas.png");
+		using var stream = new FileStream(palette_path, FileMode.Create);
 		await image.CopyToAsync(stream);
 
-		var t_wid = int.Parse(form["t_wid"].ToString());
-		var t_hei = int.Parse(form["t_hei"].ToString());
-		var palette = new Palette($"uploads/{name}_atlas.png", t_wid, t_hei);
+		var palette = new Palette(palette_path,
+				int.Parse(form["t_wid"].ToString()),
+				int.Parse(form["t_hei"].ToString()));
 
-		var wid = int.Parse(form["wid"].ToString());
-		var hei = int.Parse(form["hei"].ToString());
-		var canvas = new Canvas($"uploads/{name}_canvas.bin", wid, hei);
+		var canvas = new Canvas(Path.Combine(output_root, $"{name}_canvas.bin"),
+				int.Parse(form["wid"].ToString()),
+				int.Parse(form["hei"].ToString()));
 
 		var p = new Project(canvas, name, palette);
 		var p_context = Project.Save(p);
-		var hash = p_context.lookup;
 
-		return Results.Created($"/projects/{hash}", p.GetView());
+		return Results.Created($"/projects/{p_context.lookup}", p.GetView());
 	});
 
 app.MapGet("/projects/{hash}", async (string hash, HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => await ProjectHandler.Handle(hash, c, cToken, mgr));
