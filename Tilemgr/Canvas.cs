@@ -64,10 +64,36 @@ public class Canvas : ILoadable<Canvas>
 		return new Canvas(decompress(compressed), c.lookup);
 	}
 
+	public int GetLength(byte[] compressed)
+	{
+		int count;
+		for(count = _prologue; count < compressed.Length; count+=2)
+		{
+			if(compressed[count] == 0)
+			{
+				break;
+			}
+			count+=2;
+		}
+		return count;
+	}
+
+	public void Export(string filename)
+	{
+		byte[] compressed = compress(this.DrawableLayer);
+		using(var f = File.Create(filename))
+		{
+			using(var writer = new BinaryWriter(f))
+			{
+				writer.Write(compressed, 0, this.GetLength(compressed));
+			}
+		}
+	}
+
 	public static Context Save(Canvas obj)
 	{
 		var compressed = Canvas.compress(obj.DrawableLayer);
-		File.WriteAllBytes(obj.Name, compressed);
+		obj.Export(obj.Name);
 		return new Context(obj.Name);
 	}
 
@@ -167,17 +193,5 @@ public class Canvas : ILoadable<Canvas>
 	public byte[] compress()
 	{
 		return compress(this.DrawableLayer);
-	}
-
-	public void Export(string filename)
-	{
-		byte[] compressed = compress(this.DrawableLayer);
-		using(var f = File.Create(filename))
-		{
-			using(var writer = new BinaryWriter(f))
-			{
-				writer.Write(compressed, 0, compressed.Length);
-			}
-		}
 	}
 }
