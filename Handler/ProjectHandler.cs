@@ -76,6 +76,11 @@ public static class ProjectHandler
 				WebSocketMessageType.Text,
 				endOfMessage: true,
 				CancellationToken.None);
+		var sheet_info = JsonSerializer.SerializeToUtf8Bytes(project.palette.GetView());
+		await client.ws.SendAsync(sheet_info,
+				WebSocketMessageType.Text,
+				endOfMessage: true,
+				CancellationToken.None);
 		while(!cToken.IsCancellationRequested)
 		{
 			if(client.ws.State == WebSocketState.Closed || client.ws.State == WebSocketState.CloseSent)

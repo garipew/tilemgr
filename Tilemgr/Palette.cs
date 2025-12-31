@@ -3,6 +3,8 @@ using System.Buffers.Binary;
 
 namespace Tilemgr;
 
+public record PaletteView(string ImgPath, List<FrameView> frames);
+
 public class Palette : ILoadable<Palette>
 {
 	public readonly string ImgPath;
@@ -33,6 +35,16 @@ public class Palette : ILoadable<Palette>
 		// save TileWid, TileHei and ImgPath to a new table,
 		// "Palettes".
 		return new Context(obj.ImgPath, obj.TileWid, obj.TileHei);
+	}
+
+	public PaletteView GetView()
+	{
+		List<FrameView> list = new();
+		foreach(var frame in frames ?? Array.Empty<Frame>())
+		{
+			list.Add(frame.GetView());
+		}
+		return new PaletteView(ImgPath, list);
 	}
 
 	private (int wid, int hei)? get_png_dimensions(string ImgPath)
