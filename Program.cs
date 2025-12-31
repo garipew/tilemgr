@@ -1,6 +1,7 @@
 using System;
 using System.Net.WebSockets;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.FileProviders;
 
 using Pagemgr;
 using Tilemgr;
@@ -30,6 +31,11 @@ builder.Services.AddSingleton<PageManager<Project>>();
 
 var app = builder.Build();
 
+app.UseStaticFiles(new StaticFileOptions
+	{
+		FileProvider = new PhysicalFileProvider(Path.Combine(builder.Environment.ContentRootPath, "palettes")),
+		RequestPath = "/palettes"
+	});
 app.UseWebSockets();
 
 app.MapGet("/", () => {
@@ -80,12 +86,12 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 		{
 			return Results.BadRequest("Tilesheet required.");
 		}
-		string output_root = "uploads";
-		if(!Directory.Exists(output_root))
+		string palette_root = Path.Combine(builder.Environment.ContentRootPath, "palettes");
+		if(!Directory.Exists(palette_root))
 		{
-			Directory.CreateDirectory(output_root);
+			Directory.CreateDirectory(palette_root);
 		}
-		var palette_path = Path.Combine(output_root, $"{name}_atlas.png");
+		var palette_path = Path.Combine(palette_root, $"{name}_atlas.png");
 		using var stream = new FileStream(palette_path, FileMode.Create);
 		await image.CopyToAsync(stream);
 
@@ -93,7 +99,12 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 				int.Parse(form["t_wid"].ToString()),
 				int.Parse(form["t_hei"].ToString()));
 
-		var canvas = new Canvas(Path.Combine(output_root, $"{name}_canvas.bin"),
+		string canvas_root = Path.Combine(builder.Environment.ContentRootPath, "canvas");
+		if(!Directory.Exists(canvas_root))
+		{
+			Directory.CreateDirectory(canvas_root);
+		}
+		var canvas = new Canvas(Path.Combine(canvas_root, $"{name}_canvas.bin"),
 				int.Parse(form["wid"].ToString()),
 				int.Parse(form["hei"].ToString()));
 
