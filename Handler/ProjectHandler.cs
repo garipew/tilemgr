@@ -71,6 +71,11 @@ public static class ProjectHandler
 
 		var client = new Client(await c.WebSockets.AcceptWebSocketAsync());
 		page.Connect(client);
+		var greetings = JsonSerializer.SerializeToUtf8Bytes(project.GetView());
+		await client.ws.SendAsync(greetings,
+				WebSocketMessageType.Text,
+				endOfMessage: true,
+				CancellationToken.None);
 		while(!cToken.IsCancellationRequested)
 		{
 			if(client.ws.State == WebSocketState.Closed || client.ws.State == WebSocketState.CloseSent)
