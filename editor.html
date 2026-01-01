@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<head>
+</head>
+<body>
+	<canvas id="map"></canvas>
+	<script>
+		const BACKGROUND = "#101010"
+		const WID_MIN = 128
+		const HEI_MIN = 128
+		const FPS = 60
+		const atlas = new Image();
+		const ctx = map.getContext("2d")
+
+		function export_project() {
+			const a = document.createElement("a");
+			a.href = location.pathname + "/export";
+			a.download = "";
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+		}
+
+		function clear() {
+			ctx.fillStyle = BACKGROUND
+			ctx.fillRect(0, 0, map.width, map.height)
+		}
+
+		function draw(tilemap) {
+			if(tilemap == null) {
+				return
+			}
+
+			tilemap.forEach( (row, i) => {
+				row.forEach( (col, j) => {
+					if(col == 0 || col > frames.length) {
+						return
+					}
+					let scaled = {x: wid * scale.x, y: hei * scale.y}
+					ctx.drawImage(
+						atlas,
+						frames[col-1].x, frames[col-1].y, wid, hei,
+						j * scaled.x, i * scaled.y, scaled.x, scaled.y 
+					)
+				})
+			})
+		}
+
+		function readInt32LE(arr, offset) {
+			return (
+				arr[offset] |
+				(arr[offset + 1] << 8) |
+				(arr[offset + 2] << 16) |
+				(arr[offset + 3] << 24)
+			);
+		}
+
+		function decompress(compressed) {
+			const height = readInt32LE(compressed, 4);
+			const width  = readInt32LE(compressed, 0);
+
+			const decompressed = Array.from({ length: height }, () => new Uint8Array(width));
+
+			let prologue = 8;
+			let repeats = 0;
+			let element = 0;
+			let wid = 0;
+			let hei = 0;
+
+			for (let i = prologue; i + 1 < compressed.length; i += 2) {
+				repeats = compressed[i];
+				element = compressed[i + 1];
+
+				for (let j = 0; j < repeats; j++) {
+					decompressed[hei][wid] = element;
+					wid += 1;
+
+					if (wid >= width) {
+						wid = 0;
+						hei += 1;
+					}
+
+					if (hei >= height) {
+						return decompressed;
+					}
+				}
+			}
+
+			return decompressed;
+		}
+
+		let mouse = {x: 0, y: 0}
+		let tile_selected = 1
+		let stage = 0
+		let frames = null
+		let wid = 16
+		let hei = 16
+		let cols = 0
+		let rows = 0
+		let scale = {x: 1, y: 1}
+		var tilemap = null
+		const ws = new WebSocket(location.pathname + "/ws")
+		ws.addEventListener("message", (event) => {
+			var msg = JSON.parse(event.data)
+			switch(stage){
+				case 0:
+					cols = msg.Wid
+					rows = msg.Hei
+					wid = msg.TileWid
+					hei = msg.TileHei
+					let compressed = msg.compressed.slice()
+					console.log(compressed)
+					tilemap = decompress(compressed)
+					if(wid <= WID_MIN || hei <= HEI_MIN) {
+						scale.x = WID_MIN/wid
+						scale.y = HEI_MIN/hei
+					}
+					map.width = wid * scale.x * cols;
+					map.height = hei * scale.y * rows;
+					stage++
+					break
+				case 1:
+					frames = msg.frames.slice()
+					atlas.src = "/" + msg.ImgPath
+					stage++
+					break
+				default:
+					tilemap[msg.y][msg.x] = msg.tile
+			}
+		})
+
+		map.addEventListener("mousedown", (e) => {
+			const rect = map.getBoundingClientRect()
+			const canvas_scale = {x: map.width / rect.width, y: map.height / rect.height }
+
+			mouse.x = Math.floor((e.clientX - rect.left) / (wid * scale.x))
+			mouse.y = Math.floor((e.clientY - rect.top) / (hei * scale.y))
+			if(e.button === 0) {
+				ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: tile_selected}))
+				tile_selected++
+				if(tile_selected > frames.length) {
+					tile_selected = 1
+				}
+			}
+			if(e.button === 2) {
+				ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: 0}))
+			}
+		})
+
+		function frame() {
+			const dt = 1/FPS
+			clear()
+			draw(tilemap)
+			setTimeout(frame, 1000/FPS)
+		}
+		setTimeout(frame, 1000/FPS)
+
+	</script>
+</body>

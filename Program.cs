@@ -31,6 +31,15 @@ builder.Services.AddSingleton<PageManager<Project>>();
 
 var app = builder.Build();
 
+if(!Directory.Exists("palettes"))
+{
+	Directory.CreateDirectory("palettes");
+}
+if(!Directory.Exists("canvas"))
+{
+	Directory.CreateDirectory("canvas");
+}
+
 app.UseStaticFiles(new StaticFileOptions
 	{
 		FileProvider = new PhysicalFileProvider(Path.Combine(builder.Environment.ContentRootPath, "palettes")),
@@ -86,11 +95,7 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 		{
 			return Results.BadRequest("Tilesheet required.");
 		}
-		string palette_root = Path.Combine(builder.Environment.ContentRootPath, "palettes");
-		if(!Directory.Exists(palette_root))
-		{
-			Directory.CreateDirectory(palette_root);
-		}
+		string palette_root =  "palettes";
 		var palette_path = Path.Combine(palette_root, $"{name}_atlas.png");
 		using var stream = new FileStream(palette_path, FileMode.Create);
 		await image.CopyToAsync(stream);
@@ -99,11 +104,7 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 				int.Parse(form["t_wid"].ToString()),
 				int.Parse(form["t_hei"].ToString()));
 
-		string canvas_root = Path.Combine(builder.Environment.ContentRootPath, "canvas");
-		if(!Directory.Exists(canvas_root))
-		{
-			Directory.CreateDirectory(canvas_root);
-		}
+		string canvas_root = "canvas";
 		var canvas = new Canvas(Path.Combine(canvas_root, $"{name}_canvas.bin"),
 				int.Parse(form["wid"].ToString()),
 				int.Parse(form["hei"].ToString()));
@@ -114,7 +115,18 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 		return Results.Created($"/projects/{p_context.lookup}", p.GetView());
 	});
 
-app.MapGet("/projects/{hash}", async (string hash, HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => await ProjectHandler.Handle(hash, c, cToken, mgr));
+app.MapGet("/projects/{hash}/", (string hash, PageManager<Project> mgr) => {
+		var page = mgr.GetOrCreate(hash);
+		if(page.Data == null)
+		{
+			return Results.NotFound();
+		}
+		var html = File.ReadAllText("editor.html");
+		return Results.Content(html, "text/html");
+		}
+);
+
+app.MapGet("/projects/{hash}/ws", async (string hash, HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => await ProjectHandler.Handle(hash, c, cToken, mgr));
 
 app.MapGet("/projects/{hash}/export", (string hash, HttpContext c, PageManager<Project> mgr) =>
 	{
