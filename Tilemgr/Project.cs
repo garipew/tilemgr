@@ -259,7 +259,7 @@ public class Project : ILoadable<Project>
 		{
 			return null;
 		}
-		if(tile < 0 || tile >= (byte)frames.Length)
+		if(tile < 0 || tile > (byte)frames.Length)
 		{
 			return (x, y, this.canvas.GetTile(x, y));
 		}
