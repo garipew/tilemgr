@@ -71,7 +71,7 @@ public static class ProjectHandler
 
 		var client = new Client(await c.WebSockets.AcceptWebSocketAsync());
 		page.Connect(client);
-		var greetings = JsonSerializer.SerializeToUtf8Bytes(project.GetView());
+		var greetings = JsonSerializer.SerializeToUtf8Bytes(project.GetView(compress: true));
 		await client.ws.SendAsync(greetings,
 				WebSocketMessageType.Text,
 				endOfMessage: true,

@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Tilemgr;
 
-public record ProjectView(int TileWid, int TileHei, int Wid, int Hei, string name, string path, DateTime CreationDate);
+public record ProjectView(int TileWid, int TileHei, int Wid, int Hei, string name, string path, DateTime CreationDate, List<byte> compressed);
 
 public class Project : ILoadable<Project>
 {
@@ -104,11 +104,21 @@ public class Project : ILoadable<Project>
 		return projects;
 	}
 
-	public ProjectView GetView()
+	public ProjectView GetView(bool compress = false)
 	{
 		var t_wid = palette.TileWid;
 		var t_hei = palette.TileHei;
-		var view = new ProjectView(t_wid, t_hei, canvas.GetWidth(), canvas.GetHeight(), ProjectName, "/projects/" + this.Hash(), CreationDate);
+		List<byte> compressed = new();
+		if(compress)
+		{
+			var bytes = this.canvas.compress();
+			compressed = bytes.AsSpan(0, this.canvas.GetLength(bytes)).ToArray().ToList();
+		}
+		var view = new ProjectView(
+				t_wid, t_hei,
+				canvas.GetWidth(), canvas.GetHeight(),
+				ProjectName, "/projects/" + this.Hash(),
+				CreationDate, compressed);
 		return view;
 	}
 
