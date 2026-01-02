@@ -54,7 +54,50 @@ app.MapGet("/", () => {
 		<a href=/projects/new> New Project </a>";
 		return Results.Content(html, "text/html");});
 
-app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => ProjectHandler.Handle(c, cToken, mgr));
+app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => {
+		var projects = ProjectHandler.Handle(c, cToken, mgr);
+		var html = @"<!DOCTYPE html>
+		<html>
+		<head>
+		<style>
+		.project {
+			border: 2px solid #444;
+			padding: 12px;
+			margin: 12px 0;
+			border-radius: 8px;
+			background-color: #f9f9f9;
+		}
+
+		.header {
+			border-bottom: 2px solid #aaa;
+			padding-bottom: 8px;
+			margin-bottom: 8px;
+		}
+
+		.details {
+			padding-top: 4px;
+		}
+		</style>
+		</head>
+		<body>";
+
+		foreach(var p in projects)
+		{
+			html += @$"<div class=""project"">
+			<div class=""header"">
+			<a href={p.path}><h3> {Path.GetFileName(p.name)} </h3></a>
+			</div>
+			<div class=""details"">
+			<h5>Tile size: {p.TileWid} x {p.TileHei} px</h5>
+			<h5>Project size: {p.Wid} x {p.Hei} tiles</h5>
+			<h5>Creation Date: {p.CreationDate}</h5>
+			</div>
+			</div>";
+		}
+
+		html += "</body>";
+		return Results.Content(html, "text/html");
+		});
 
 app.MapGet("/projects/new", () => {
 		var html = @"<!DOCTYPE html>
