@@ -43,7 +43,7 @@
 				selector_ctx.drawImage(
 					atlas,
 					frame.x, frame.y, wid, hei,
-					i * scaled.x, 0, scaled.x, scaled.y 
+					i * scaled.x, 0, scaled.x, scaled.y
 				)
 			});
 		}
@@ -62,7 +62,7 @@
 					ctx.drawImage(
 						atlas,
 						frames[col-1].x, frames[col-1].y, wid, hei,
-						j * scaled.x, i * scaled.y, scaled.x, scaled.y 
+						j * scaled.x, i * scaled.y, scaled.x, scaled.y
 					)
 				})
 			})
@@ -111,7 +111,20 @@
 			return decompressed;
 		}
 
-		let mouse = {x: 0, y: 0}
+		function send_update(ws, e) {
+			const rect = map.getBoundingClientRect()
+
+			mouse.x = Math.floor((e.clientX - rect.left) / (wid * scale.x))
+			mouse.y = Math.floor((e.clientY - rect.top) / (hei * scale.y))
+			if(e.button === 0) {
+				ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: tile_selected}))
+			}
+			if(e.button === 2) {
+				ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: 0}))
+			}
+		}
+
+		let mouse = {x: 0, y: 0, down: false}
 		let tile_selected = 1
 		let stage = 0
 		let frames = null
@@ -154,16 +167,23 @@
 		})
 
 		map.addEventListener("mousedown", (e) => {
-			const rect = map.getBoundingClientRect()
+			mouse.down = true
+			send_update(ws, e)
+		})
 
-			mouse.x = Math.floor((e.clientX - rect.left) / (wid * scale.x))
-			mouse.y = Math.floor((e.clientY - rect.top) / (hei * scale.y))
-			if(e.button === 0) {
-				ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: tile_selected}))
+		map.addEventListener("mouseup", (e) => {
+			mouse.down = false
+		})
+
+		map.addEventListener("mousemove", (e) => {
+			if(!mouse.down) {
+				return
 			}
-			if(e.button === 2) {
-				ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: 0}))
-			}
+			send_update(ws, e)
+		})
+
+		map.addEventListener("mouseleave", (e) => {
+			mouse.down = false
 		})
 
 		selector.addEventListener("mousedown", (e) => {
