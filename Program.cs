@@ -188,7 +188,7 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 		var p = new Project(canvas, name, palette);
 		var p_context = Project.Save(p);
 
-		return Results.Created($"/projects/{p_context.lookup}", p.GetView());
+		return Results.Redirect($"/projects/{p_context.lookup}");
 	});
 
 app.MapGet("/projects/{hash}/", (string hash, PageManager<Project> mgr) => {
