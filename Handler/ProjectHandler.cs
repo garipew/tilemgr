@@ -103,6 +103,7 @@ public static class ProjectHandler
 			try{
 				update = JsonSerializer.Deserialize<UpdateMessage>(msg.AsSpan(0, len));
 			} catch (JsonException e) {
+				System.Console.WriteLine($"Make sure that tile <= 255.");
 				System.Console.WriteLine(e.ToString());
 				continue;
 			}

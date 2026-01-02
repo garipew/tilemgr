@@ -165,12 +165,15 @@
 				return
 			}
 
-			selector_ctx.clearRect(0, 0, selector.width, selector.height);
-
 			const tileW = wid * scale.x / 2
 			const tileH = hei * scale.y / 2
 
 			const tilesPerRow = Math.floor(selector.width / tileW);
+			const rowsNeeded = Math.ceil(frames.length / tilesPerRow);
+
+			selector.height = rowsNeeded * tileH;
+			selector_ctx.clearRect(0, 0, selector.width, selector.height);
+
 			col = 0
 			row = 0
 			frames.forEach( (frame, i) => {
@@ -344,23 +347,28 @@
 		})
 
 		selector.addEventListener("mousedown", (e) => {
-			const rect = selector.getBoundingClientRect()
-			const tileW = wid * scale.x / 2
-			const tileH = hei * scale.y / 2
-			const tilesPerRow = Math.floor(selector.width / tileW)
+			const rect = selector.getBoundingClientRect();
+			const containerRect = document.getElementById("selector-container").getBoundingClientRect();
+			const scrollTop = document.getElementById("selector-container").scrollTop;
 
-			mouse.x = Math.floor((e.clientX - rect.left) / tileW)
-			mouse.y = Math.floor((e.clientY - rect.top) / tileH)
+			const tileW = wid * scale.x / 2;
+			const tileH = hei * scale.y / 2;
+			const tilesPerRow = Math.floor(selector.width / tileW);
 
-			const idx = mouse.x + mouse.y * tilesPerRow;
+			// Calculate position relative to canvas, accounting for scroll
+			const x = e.clientX - rect.left;
+			const y = (e.clientY - containerRect.top) + scrollTop;
+
+			const tileX = Math.floor(x / tileW);
+			const tileY = Math.floor(y / tileH);
+
+			const idx = tileX + tileY * tilesPerRow;
 
 			if(e.button === 0) {
-				if(idx < 0 || idx >= frames.length)
-				{
-					return
+				if(idx < 0 || idx >= frames.length) {
+					return;
 				}
-				tile_selected = idx + 1
-			}
-		})
+				tile_selected = idx + 1;
+			}		})
 	</script>
 </body>
