@@ -121,5 +121,10 @@ public static class ProjectHandler
 			await BroadcastMessage(result, page.Clients);
 		}
 		page.Disconnect(client);
+		if(page.IsEmpty)
+		{
+			Project.Save(project);
+			mgr.TryRemove(hash, out page);
+		}
 	}
 }
