@@ -38,13 +38,21 @@
 				return
 			}
 
+			col = 0
+			row = 0
 			frames.forEach( (frame, i) => {
 				let scaled = {x: wid * scale.x / 2, y: hei * scale.y / 2}
 				selector_ctx.drawImage(
 					atlas,
 					frame.x, frame.y, wid, hei,
-					i * scaled.x, 0, scaled.x, scaled.y
+					col * scaled.x, row * scaled.y, scaled.x, scaled.y
 				)
+				col++;
+				if(col * scaled.x >= selector.width)
+				{
+					row++
+					col = 0
+				}
 			});
 		}
 
@@ -156,8 +164,8 @@
 				case 1:
 					frames = msg.frames.slice()
 					atlas.src = "/" + msg.ImgPath
-					selector.width = frames.length * wid * scale.x / 2
-					selector.height = hei * scale.y / 2
+					selector.width = map.width
+					selector.height = Math.ceil(frames.length / (selector.width / (wid * scale.x))) * hei * scale.y / 2
 					draw_selector(frames)
 					stage++
 					break
@@ -188,14 +196,17 @@
 
 		selector.addEventListener("mousedown", (e) => {
 			const rect = selector.getBoundingClientRect()
+			mouse.x = Math.floor((e.clientX - rect.left) / (wid * scale.x / 2))
+			mouse.y = Math.floor((e.clientY - rect.top) / (hei * scale.y / 2))
 			if(e.button === 0) {
-				tile_selected = Math.floor((e.clientX - rect.left) / (wid * scale.x / 2)) + 1
+				tile_selected = mouse.x + (mouse.y * cols * 2) + 1
 			}
 		})
 
 		function frame() {
 			const dt = 1/FPS
 			clear()
+			draw_selector(frames)
 			draw(tilemap)
 			setTimeout(frame, 1000/FPS)
 		}
