@@ -48,85 +48,118 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseWebSockets();
 
 app.MapGet("/", () => {
-		var html = @"
-		<a href=/projects> Browse Projects </a>
-		<br>
-		<a href=/projects/new> New Project </a>";
-		return Results.Content(html, "text/html");});
+		var html = File.ReadAllText(Path.Combine("pages", "index.html"));
+		return Results.Content(html, "text/html");
+});
 
 app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => {
 		var projects = ProjectHandler.Handle(c, cToken, mgr);
 		var html = @"<!DOCTYPE html>
-		<html>
+		<html lang=""en"">
 		<head>
+		<meta charset=""UTF-8"">
+		<title>Projects</title>
 		<style>
+		:root {
+			--bg: #0f0f0f;
+			--panel: #1a1a1a;
+			--border: #2a2a2a;
+			--accent: #4da6ff;
+			--text: #e0e0e0;
+			--muted: #999;
+		}
+
+		* {
+			box-sizing: border-box;
+			font-family: system-ui, sans-serif;
+		}
+
+		body {
+			margin: 0;
+			background: var(--bg);
+			color: var(--text);
+		}
+
+		.container {
+			max-width: 900px;
+			margin: 40px auto;
+			padding: 0 16px;
+		}
+
+		h1 {
+			font-size: 22px;
+			margin-bottom: 16px;
+		}
+
 		.project {
-			border: 2px solid #444;
-			padding: 12px;
-			margin: 12px 0;
-			border-radius: 8px;
-			background-color: #f9f9f9;
+			background: var(--panel);
+			border: 1px solid var(--border);
+			border-radius: 6px;
+			padding: 14px;
+			margin-bottom: 12px;
+		}
+
+		.project a {
+			color: var(--accent);
+		        text-decoration: none;
+		}
+
+		.project a:hover {
+			text-decoration: underline;
 		}
 
 		.header {
-			border-bottom: 2px solid #aaa;
-			padding-bottom: 8px;
 			margin-bottom: 8px;
 		}
 
+		.header h3 {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 600;
+		}
+
 		.details {
-			padding-top: 4px;
+			font-size: 13px;
+			color: var(--muted);
+			display: grid;
+			gap: 4px;
 		}
 		</style>
-		</head>
-		<body>";
+			</head>
+			<body>
+			<div class=""container"">
+			<h1>Projects</h1>
+			";
 
-		foreach(var p in projects)
+
+		foreach (var p in projects)
 		{
-			html += @$"<div class=""project"">
-			<div class=""header"">
-			<a href={p.path}><h3> {Path.GetFileName(p.name)} </h3></a>
-			</div>
-			<div class=""details"">
-			<h5>Tile size: {p.TileWid} x {p.TileHei} px</h5>
-			<h5>Project size: {p.Wid} x {p.Hei} tiles</h5>
-			<h5>Creation Date: {p.CreationDate}</h5>
-			</div>
-			</div>";
+			html += @$"
+				<div class=""project"">
+				<div class=""header"">
+				<a href=""{p.path}"">
+				<h3>{Path.GetFileName(p.name)}</h3>
+				</a>
+				</div>
+				<div class=""details"">
+				<div>Tile size: {p.TileWid} × {p.TileHei} px</div>
+				<div>Project size: {p.Wid} × {p.Hei} tiles</div>
+				<div>Created: {p.CreationDate}</div>
+				</div>
+				</div>
+				";
 		}
 
-		html += "</body>";
+		html += @"</div>
+			</body>
+			</html>";
 		return Results.Content(html, "text/html");
 		});
 
 app.MapGet("/projects/new", () => {
-		var html = @"<!DOCTYPE html>
-		<html>
-		<head>
-		</head>
-		<body>
-		    <h2>Project Creation</h2>
-		    <form action=""/projects/new"" method=""post"" enctype=""multipart/form-data"">
-			<input name=""name"" placeholder=""Project name"" value=""Default"" required>
-			<br><br>
-			<input name=""t_wid"" type=""number"" placeholder=""Tile Width (px)"" value=""16"" required>
-			<br><br>
-			<input name=""t_hei"" type=""number"" placeholder=""Tile Heigth (px)"" value=""16"" required>
-			<br><br>
-			<input name=""wid"" type=""number"" placeholder=""Columns (tiles)"" value=""10"" required>
-			<br><br>
-			<input name=""hei"" type=""number"" placeholder=""Rows (tiles)"" value=""10"" required>
-			<br><br>
-			<input name=""image"" type=""file"" accept=""image/png"" required>
-			<br><br>
-			<button type=""submit"">Create Project</button>
-			<br><br>
-		    </form>
-		    <p><small>This form sends query parameters (name, wid, hei) via POST</small></p>
-		</body>
-		</html>
-		";
-		return Results.Content(html, "text/html");});
+		var html = File.ReadAllText(Path.Combine("pages", "create_project.html"));
+		return Results.Content(html, "text/html");
+});
 
 app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mgr) =>
 	{
@@ -164,7 +197,7 @@ app.MapGet("/projects/{hash}/", (string hash, PageManager<Project> mgr) => {
 		{
 			return Results.NotFound();
 		}
-		var html = File.ReadAllText("editor.html");
+		var html = File.ReadAllText(Path.Combine("pages", "editor.html"));
 		return Results.Content(html, "text/html");
 		}
 );

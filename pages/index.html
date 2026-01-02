@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Tilemap Editor</title>
+	<style>
+		:root {
+			--bg: #0f0f0f;
+			--panel: #1a1a1a;
+			--border: #2a2a2a;
+			--accent: #4da6ff;
+			--text: #e0e0e0;
+		}
+
+		* {
+			box-sizing: border-box;
+			font-family: system-ui, sans-serif;
+		}
+
+		body {
+			margin: 0;
+			background: var(--bg);
+			color: var(--text);
+			height: 100vh;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.card {
+			background: var(--panel);
+			border: 1px solid var(--border);
+			border-radius: 6px;
+			padding: 24px;
+			min-width: 260px;
+			text-align: center;
+		}
+
+		h1 {
+			margin: 0 0 16px 0;
+			font-size: 20px;
+		}
+
+		a {
+			display: block;
+			margin: 8px 0;
+			padding: 8px;
+			background: #000;
+			border: 1px solid var(--border);
+			border-radius: 4px;
+			color: var(--accent);
+			text-decoration: none;
+			font-weight: 600;
+		}
+
+		a:hover {
+			background: #111;
+		}
+	</style>
+</head>
+
+<body>
+
+	<div class="card">
+		<h1>Tilemap Editor</h1>
+
+		<a href="/projects">Browse Projects</a>
+		<a href="/projects/new">New Project</a>
+	</div>
+
+</body>
+</html>
