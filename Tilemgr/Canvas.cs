@@ -1,21 +1,21 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace Tilemgr;
 
 public class Canvas : ILoadable<Canvas>
 {
 	public byte[,] DrawableLayer;
-	private static readonly byte _prologue = 8;
 	public readonly string Name;
 
-	public Canvas(string name, Int32 wid, Int32 hei)
+	public Canvas(string name, int wid, int hei)
 	{
 		this.DrawableLayer = new byte[hei,wid];
 		this.Name = name;
 	}
 
-	public Canvas(Int32 wid, Int32 hei, string name)
+	public Canvas(int wid, int hei, string name)
 	{
 		this.DrawableLayer = new byte[hei,wid];
 		this.Name = name;
@@ -67,7 +67,7 @@ public class Canvas : ILoadable<Canvas>
 	public int GetLength(byte[] compressed)
 	{
 		int count;
-		for(count = _prologue; count < compressed.Length; count+=2)
+		for(count = Array.IndexOf(compressed, (byte)'\n')+1; count < compressed.Length; count+=2)
 		{
 			if(compressed[count] == 0)
 			{
@@ -97,22 +97,22 @@ public class Canvas : ILoadable<Canvas>
 		return new Context(obj.Name);
 	}
 
-	public Int32 GetHeight()
+	public int GetHeight()
 	{
 		return this.DrawableLayer.GetLength(0);
 	}
 
-	public byte GetTile(Int32 x, Int32 y)
+	public byte GetTile(int x, int y)
 	{
 		return this.DrawableLayer[y, x];
 	}
 
-	public Int32 GetWidth()
+	public int GetWidth()
 	{
 		return this.DrawableLayer.GetLength(1);
 	}
 
-	public (Int32 x, Int32 y, byte tile) UpdateTile(Int32 x, Int32 y, byte tile)
+	public (int x, int y, byte tile) UpdateTile(int x, int y, byte tile)
 	{
 		this.DrawableLayer[y,x] = tile;
 		return (x, y, this.DrawableLayer[y,x]);
@@ -120,12 +120,17 @@ public class Canvas : ILoadable<Canvas>
 
 	public static byte[,] decompress(byte[] compressed)
 	{
-		byte[,] decompressed = new byte[BitConverter.ToInt32(compressed, 4), BitConverter.ToInt32(compressed, 0)];
+		int header_length = Array.IndexOf(compressed, (byte)'\n');
+		string header = Encoding.UTF8.GetString(compressed, 0, header_length);
+		string[] fields = header.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+		int wid_total = int.Parse(fields[0]);
+		int hei_total = int.Parse(fields[1]);
+		byte[,] decompressed = new byte[hei_total, wid_total];
 		byte repeats = 0;
 		byte element  = 0;
-		Int32 wid = 0;
-		Int32 hei = 0;
-		for(var i = _prologue; i+1 < compressed.Length; i+=2)
+		int wid = 0;
+		int hei = 0;
+		for(var i = header_length+1; i+1 < compressed.Length; i+=2)
 		{
 			repeats = compressed[i];
 			element = compressed[i+1];
@@ -152,23 +157,17 @@ public class Canvas : ILoadable<Canvas>
 		byte count = 0;
 		byte last = decompressed[0,0];
 
-		Int32 hei = decompressed.GetLength(0);
-		Int32 wid = decompressed.GetLength(1);
+		int hei = decompressed.GetLength(0);
+		int wid = decompressed.GetLength(1);
 
-		byte[] wid_bytes = BitConverter.GetBytes(wid);
-		byte[] hei_bytes = BitConverter.GetBytes(hei);
-		if(!BitConverter.IsLittleEndian)
-		{
-			Array.Reverse(wid_bytes);
-			Array.Reverse(hei_bytes);
-		}
+		string header = $"{wid} {hei}\n";
+		var headerBytes = Encoding.UTF8.GetBytes(header);
 
-		var prologue = wid_bytes.Length + hei_bytes.Length;
+		var prologue = headerBytes.Length;
 		var max_size = (2 * hei * wid) + prologue;
 		byte[] compressed = new byte[max_size];
 
-		Buffer.BlockCopy(wid_bytes, 0, compressed, 0, wid_bytes.Length);
-		Buffer.BlockCopy(hei_bytes, 0, compressed, wid_bytes.Length, hei_bytes.Length);
+		Buffer.BlockCopy(headerBytes, 0, compressed, 0, headerBytes.Length);
 
 		var current = prologue;
 		foreach(byte tile in decompressed)

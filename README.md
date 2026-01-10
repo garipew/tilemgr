@@ -79,10 +79,9 @@ Projects can be exported to a compact binary format suitable for custom engines 
 
 The exported file consists of:
 
-1. **Header** — 8 bytes total
+1. **Header**
 
-   * Width  (32‑bit integer, little‑endian)
-   * Height (32‑bit integer, little‑endian)
+    * As a string, in the format: "{Width} {Height}\n"
 
 2. **Tile data**
 

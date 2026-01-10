@@ -211,22 +211,13 @@
 			})
 		}
 
-		function readInt32LE(arr, offset) {
-			return (
-				arr[offset] |
-				(arr[offset + 1] << 8) |
-				(arr[offset + 2] << 16) |
-				(arr[offset + 3] << 24)
-			);
-		}
-
 		function decompress(compressed) {
-			const height = readInt32LE(compressed, 4);
-			const width  = readInt32LE(compressed, 0);
+			const header = compressed.slice(0, compressed.indexOf("\n"))
+			const [width,height] = header.split(" ").map(Number);
 
 			const decompressed = Array.from({ length: height }, () => new Uint8Array(width));
 
-			let prologue = 8;
+			let prologue = header.length;
 			let repeats = 0;
 			let element = 0;
 			let wid = 0;
@@ -285,7 +276,7 @@
 					rows = msg.Hei
 					wid = msg.TileWid
 					hei = msg.TileHei
-					let compressed = msg.compressed.slice()
+					let compressed = new TextDecoder().decode(new Uint8Array(msg.compressed))
 					tilemap = decompress(compressed)
 					if(wid <= WID_MIN || hei <= HEI_MIN) {
 						scale.x = WID_MIN/wid
