@@ -40,17 +40,16 @@ if(!Directory.Exists("canvas"))
 	Directory.CreateDirectory("canvas");
 }
 
-app.UseStaticFiles(new StaticFileOptions
-	{
-		FileProvider = new PhysicalFileProvider(Path.Combine(builder.Environment.ContentRootPath, "palettes")),
-		RequestPath = "/palettes"
-	});
-app.UseWebSockets();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
-app.MapGet("/", () => {
-		var html = File.ReadAllText(Path.Combine("pages", "index.html"));
-		return Results.Content(html, "text/html");
-});
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "palettes");
+app.UseStaticFiles(new StaticFileOptions
+		{
+		FileProvider = new PhysicalFileProvider(uploadsPath),
+		RequestPath = "/palettes"
+		});
+app.UseWebSockets();
 
 app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => {
 		var projects = ProjectHandler.Handle(c, cToken, mgr);
@@ -59,72 +58,7 @@ app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Pr
 		<head>
 		<meta charset=""UTF-8"">
 		<title>Projects</title>
-		<style>
-		:root {
-			--bg: #0f0f0f;
-			--panel: #1a1a1a;
-			--border: #2a2a2a;
-			--accent: #4da6ff;
-			--text: #e0e0e0;
-			--muted: #999;
-		}
-
-		* {
-			box-sizing: border-box;
-			font-family: system-ui, sans-serif;
-		}
-
-		body {
-			margin: 0;
-			background: var(--bg);
-			color: var(--text);
-		}
-
-		.container {
-			max-width: 900px;
-			margin: 40px auto;
-			padding: 0 16px;
-		}
-
-		h1 {
-			font-size: 22px;
-			margin-bottom: 16px;
-		}
-
-		.project {
-			background: var(--panel);
-			border: 1px solid var(--border);
-			border-radius: 6px;
-			padding: 14px;
-			margin-bottom: 12px;
-		}
-
-		.project a {
-			color: var(--accent);
-		        text-decoration: none;
-		}
-
-		.project a:hover {
-			text-decoration: underline;
-		}
-
-		.header {
-			margin-bottom: 8px;
-		}
-
-		.header h3 {
-			margin: 0;
-			font-size: 16px;
-			font-weight: 600;
-		}
-
-		.details {
-			font-size: 13px;
-			color: var(--muted);
-			display: grid;
-			gap: 4px;
-		}
-		</style>
+		<link rel=""stylesheet"" href=""/css/project.css"">
 			</head>
 			<body>
 			<div class=""container"">
@@ -157,8 +91,7 @@ app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Pr
 		});
 
 app.MapGet("/projects/new", () => {
-		var html = File.ReadAllText(Path.Combine("pages", "create_project.html"));
-		return Results.Content(html, "text/html");
+		return Results.File("new_project.html", "text/html");
 });
 
 app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mgr) =>
@@ -197,8 +130,7 @@ app.MapGet("/projects/{hash}/", (string hash, PageManager<Project> mgr) => {
 		{
 			return Results.NotFound();
 		}
-		var html = File.ReadAllText(Path.Combine("pages", "editor.html"));
-		return Results.Content(html, "text/html");
+		return Results.File("editor.html", "text/html");
 		}
 );
 

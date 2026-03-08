@@ -1,0 +1,193 @@
+const BACKGROUND = "#101010"
+const WID_MIN = 128
+const HEI_MIN = 128
+const FPS = 60
+const atlas = new Image();
+const ctx = map.getContext("2d")
+const selector_ctx = selector.getContext("2d")
+function export_project() {
+	const a = document.createElement("a");
+	a.href = location.pathname + "/export";
+	a.download = "";
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+}
+function clear() {
+	ctx.fillStyle = BACKGROUND
+	ctx.fillRect(0, 0, map.width, map.height)
+}
+function draw_selector(frames) {
+	if(frames == null)
+	{
+		return
+	}
+	const tileW = wid * scale.x / 2
+	const tileH = hei * scale.y / 2
+	const tilesPerRow = Math.floor(selector.width / tileW);
+	const rowsNeeded = Math.ceil(frames.length / tilesPerRow);
+	selector.height = rowsNeeded * tileH;
+	selector_ctx.clearRect(0, 0, selector.width, selector.height);
+	col = 0
+	row = 0
+	frames.forEach( (frame, i) => {
+		selector_ctx.drawImage(
+			atlas,
+			frame.x, frame.y, wid, hei,
+			col * tileW, row * tileH, tileW, tileH
+		)
+		col++;
+		if(col >= tilesPerRow)
+		{
+			row++
+			col = 0
+		}
+	});
+}
+function draw(tilemap) {
+	if(tilemap == null) {
+		return
+	}
+	tilemap.forEach( (row, i) => {
+		row.forEach( (col, j) => {
+			if(col == 0 || col > frames.length) {
+				return
+			}
+			let scaled = {x: wid * scale.x, y: hei * scale.y}
+			ctx.drawImage(
+				atlas,
+				frames[col-1].x, frames[col-1].y, wid, hei,
+				j * scaled.x, i * scaled.y, scaled.x, scaled.y
+			)
+		})
+	})
+}
+function decompress(compressed) {
+	const header = compressed.slice(0, compressed.indexOf("\n"))
+	const [width,height] = header.split(" ").map(Number);
+	const decompressed = Array.from({ length: height }, () => new Uint8Array(width));
+	let prologue = header.length;
+	let repeats = 0;
+	let element = 0;
+	let wid = 0;
+	let hei = 0;
+	for (let i = prologue; i + 1 < compressed.length; i += 2) {
+		repeats = compressed[i];
+		element = compressed[i + 1];
+		for (let j = 0; j < repeats; j++) {
+			decompressed[hei][wid] = element;
+			wid += 1;
+			if (wid >= width) {
+				wid = 0;
+				hei += 1;
+			}
+			if (hei >= height) {
+				return decompressed;
+			}
+		}
+	}
+	return decompressed;
+}
+function send_update(ws, e) {
+	const rect = map.getBoundingClientRect()
+	mouse.x = Math.floor((e.clientX - rect.left) / (wid * scale.x))
+	mouse.y = Math.floor((e.clientY - rect.top) / (hei * scale.y))
+	if(!erase) {
+		ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: tile_selected}))
+	} else {
+		ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: 0}))
+	}
+}
+let mouse = {x: 0, y: 0, down: false}
+let tile_selected = 1
+let stage = 0
+let frames = null
+let wid = 16
+let hei = 16
+let cols = 0
+let rows = 0
+let scale = {x: 1, y: 1}
+var tilemap = null
+const ws = new WebSocket(location.pathname + "/ws")
+ws.addEventListener("message", (event) => {
+	var msg = JSON.parse(event.data)
+	switch(stage){
+		case 0:
+			cols = msg.Wid
+			rows = msg.Hei
+			wid = msg.TileWid
+			hei = msg.TileHei
+			let compressed = new TextDecoder().decode(new Uint8Array(msg.compressed))
+			tilemap = decompress(compressed)
+			if(wid <= WID_MIN || hei <= HEI_MIN) {
+				scale.x = WID_MIN/wid
+				scale.y = HEI_MIN/hei
+			}
+			map.width = wid * scale.x * cols;
+			map.height = hei * scale.y * rows;
+			stage++
+			break
+		case 1:
+			frames = msg.frames.slice()
+			atlas.src = "/" + msg.ImgPath
+			const sidebar = document.getElementById("selector-container")
+			selector.width = sidebar.clientWidth
+			selector.height = sidebar.clientHeight
+			atlas.onload = () => {
+				clear()
+				draw(tilemap)
+				draw_selector(frames)
+			}
+			stage++
+			break
+		default:
+			tilemap[msg.y][msg.x] = msg.tile
+			clear()
+			draw(tilemap)
+			draw_selector(frames)
+	}
+})
+let erase = false
+map.addEventListener("contextmenu", (e) => {
+	e.preventDefault();
+});
+map.addEventListener("mousedown", (e) => {
+	mouse.down = true
+	erase = true
+	if(e.button == 0) {
+		erase = false
+	}
+	send_update(ws, e)
+})
+map.addEventListener("mouseup", (e) => {
+	mouse.down = false
+})
+map.addEventListener("mousemove", (e) => {
+	if(!mouse.down) {
+		return
+	}
+	send_update(ws, e)
+})
+map.addEventListener("mouseleave", (e) => {
+	mouse.down = false
+})
+selector.addEventListener("mousedown", (e) => {
+	const rect = selector.getBoundingClientRect();
+	const containerRect = document.getElementById("selector-container").getBoundingClientRect();
+	const scrollTop = document.getElementById("selector-container").scrollTop;
+	const tileW = wid * scale.x / 2;
+	const tileH = hei * scale.y / 2;
+	const tilesPerRow = Math.floor(selector.width / tileW);
+	// Calculate position relative to canvas, accounting for scroll
+	const x = e.clientX - rect.left;
+	const y = (e.clientY - containerRect.top) + scrollTop;
+	const tileX = Math.floor(x / tileW);
+	const tileY = Math.floor(y / tileH);
+	const idx = tileX + tileY * tilesPerRow;
+	if(e.button === 0) {
+		if(idx < 0 || idx >= frames.length) {
+			return;
+		}
+		tile_selected = idx + 1;
+	}		})
+

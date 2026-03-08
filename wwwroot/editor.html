@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Tilemap Editor</title>
+	<link rel="stylesheet" href="/css/editor.css">
+</head>
+<body>
+	<div id="toolbar">
+		<button onclick="export_project()">Export Project</button>
+	</div>
+	<div id="editor">
+		<div id="sidebar">
+			<h3>Tiles</h3>
+			<div id="selector-container">
+				<canvas id="selector"></canvas>
+			</div>
+		</div>
+		<div id="canvas-container">
+			<canvas id="map"></canvas>
+		</div>
+	</div>
+	<script src="/js/editor.js"></script>
+</body>
