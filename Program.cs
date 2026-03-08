@@ -31,23 +31,29 @@ builder.Services.AddSingleton<PageManager<Project>>();
 
 var app = builder.Build();
 
-if(!Directory.Exists("palettes"))
-{
-	Directory.CreateDirectory("palettes");
+if(!Directory.Exists("uploads")){
+	Directory.CreateDirectory("uploads");
 }
-if(!Directory.Exists("canvas"))
+
+var path = Path.Combine("uploads", "palettes");
+if(!Directory.Exists(path))
 {
-	Directory.CreateDirectory("canvas");
+	Directory.CreateDirectory(path);
+}
+path = Path.Combine("uploads", "canvas");
+if(!Directory.Exists(path))
+{
+	Directory.CreateDirectory(path);
 }
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "palettes");
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
 app.UseStaticFiles(new StaticFileOptions
 		{
 		FileProvider = new PhysicalFileProvider(uploadsPath),
-		RequestPath = "/palettes"
+		RequestPath = "/uploads"
 		});
 app.UseWebSockets();
 
@@ -104,8 +110,8 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 		{
 			return Results.BadRequest("Tilesheet required.");
 		}
-		string palette_root =  "palettes";
-		var palette_path = Path.Combine(palette_root, $"{name}_atlas.png");
+		var root = Path.Combine("uploads", "palettes");
+		var palette_path = Path.Combine(root, $"{name}_atlas.png");
 		using var stream = new FileStream(palette_path, FileMode.Create);
 		await image.CopyToAsync(stream);
 
@@ -113,8 +119,8 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 				int.Parse(form["t_wid"].ToString()),
 				int.Parse(form["t_hei"].ToString()));
 
-		string canvas_root = "canvas";
-		var canvas = new Canvas(Path.Combine(canvas_root, $"{name}_canvas.bin"),
+		root = Path.Combine("uploads", "canvas");
+		var canvas = new Canvas(Path.Combine(root, $"{name}_canvas.bin"),
 				int.Parse(form["wid"].ToString()),
 				int.Parse(form["hei"].ToString()));
 

@@ -5,6 +5,7 @@ const FPS = 60
 const atlas = new Image();
 const ctx = map.getContext("2d")
 const selector_ctx = selector.getContext("2d")
+
 function export_project() {
 	const a = document.createElement("a");
 	a.href = location.pathname + "/export";
@@ -13,10 +14,12 @@ function export_project() {
 	a.click();
 	a.remove();
 }
+
 function clear() {
 	ctx.fillStyle = BACKGROUND
 	ctx.fillRect(0, 0, map.width, map.height)
 }
+
 function draw_selector(frames) {
 	if(frames == null)
 	{
@@ -44,6 +47,7 @@ function draw_selector(frames) {
 		}
 	});
 }
+
 function draw(tilemap) {
 	if(tilemap == null) {
 		return
@@ -62,11 +66,13 @@ function draw(tilemap) {
 		})
 	})
 }
+
 function decompress(compressed) {
-	const header = compressed.slice(0, compressed.indexOf("\n"))
+	let prologue = compressed.indexOf("\n".charCodeAt(0));
+	prologue++;
+	const header = new TextDecoder("latin1").decode(compressed.slice(0, prologue));
 	const [width,height] = header.split(" ").map(Number);
 	const decompressed = Array.from({ length: height }, () => new Uint8Array(width));
-	let prologue = header.length;
 	let repeats = 0;
 	let element = 0;
 	let wid = 0;
@@ -88,6 +94,7 @@ function decompress(compressed) {
 	}
 	return decompressed;
 }
+
 function send_update(ws, e) {
 	const rect = map.getBoundingClientRect()
 	mouse.x = Math.floor((e.clientX - rect.left) / (wid * scale.x))
@@ -98,6 +105,7 @@ function send_update(ws, e) {
 		ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: 0}))
 	}
 }
+
 let mouse = {x: 0, y: 0, down: false}
 let tile_selected = 1
 let stage = 0
@@ -108,6 +116,7 @@ let cols = 0
 let rows = 0
 let scale = {x: 1, y: 1}
 var tilemap = null
+
 const ws = new WebSocket(location.pathname + "/ws")
 ws.addEventListener("message", (event) => {
 	var msg = JSON.parse(event.data)
@@ -117,7 +126,7 @@ ws.addEventListener("message", (event) => {
 			rows = msg.Hei
 			wid = msg.TileWid
 			hei = msg.TileHei
-			let compressed = new TextDecoder().decode(new Uint8Array(msg.compressed))
+			let compressed = new Uint8Array(msg.compressed)
 			tilemap = decompress(compressed)
 			if(wid <= WID_MIN || hei <= HEI_MIN) {
 				scale.x = WID_MIN/wid
@@ -147,10 +156,12 @@ ws.addEventListener("message", (event) => {
 			draw_selector(frames)
 	}
 })
+
 let erase = false
 map.addEventListener("contextmenu", (e) => {
 	e.preventDefault();
 });
+
 map.addEventListener("mousedown", (e) => {
 	mouse.down = true
 	erase = true
@@ -159,18 +170,22 @@ map.addEventListener("mousedown", (e) => {
 	}
 	send_update(ws, e)
 })
+
 map.addEventListener("mouseup", (e) => {
 	mouse.down = false
 })
+
 map.addEventListener("mousemove", (e) => {
 	if(!mouse.down) {
 		return
 	}
 	send_update(ws, e)
 })
+
 map.addEventListener("mouseleave", (e) => {
 	mouse.down = false
 })
+
 selector.addEventListener("mousedown", (e) => {
 	const rect = selector.getBoundingClientRect();
 	const containerRect = document.getElementById("selector-container").getBoundingClientRect();
@@ -178,11 +193,14 @@ selector.addEventListener("mousedown", (e) => {
 	const tileW = wid * scale.x / 2;
 	const tileH = hei * scale.y / 2;
 	const tilesPerRow = Math.floor(selector.width / tileW);
+	
 	// Calculate position relative to canvas, accounting for scroll
 	const x = e.clientX - rect.left;
 	const y = (e.clientY - containerRect.top) + scrollTop;
+
 	const tileX = Math.floor(x / tileW);
 	const tileY = Math.floor(y / tileH);
+
 	const idx = tileX + tileY * tilesPerRow;
 	if(e.button === 0) {
 		if(idx < 0 || idx >= frames.length) {
