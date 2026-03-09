@@ -77,7 +77,7 @@ app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Pr
 			html += @$"
 				<div class=""project"">
 				<div class=""header"">
-				<a href=""{p.path}"">
+				<a href=""{p.path}/"">
 				<h3>{Path.GetFileName(p.name)}</h3>
 				</a>
 				</div>
