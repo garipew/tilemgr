@@ -1,101 +1,105 @@
 :root {
 	--bg: #0f0f0f;
-	--panel: #1a1a1a;
-	--panel-border: #2a2a2a;
-	--accent: #4da6ff;
+	--fg: #1a1a1a;
 	--text: #e0e0e0;
+	--primary: #2a2a2a;
+	--secondary: #4da6ff;
 }
 
 * {
-	box-sizing: border-box;
-	font-family: system-ui, sans-serif;
+	color: var(--text);
+}
+
+html, body{
+	height: 100%;
+	margin: 0;
+	overflow: hidden;
+}
+
+a {
+	color: var(--secondary);
+}
+
+a:hover {
+	color: var(--text);
 }
 
 body {
-	margin: 0;
-	background: var(--bg);
-	color: var(--text);
-	height: 100vh;
 	display: flex;
 	flex-direction: column;
 }
 
-#toolbar {
-	height: 48px;
-	display: flex;
-	align-items: center;
-	padding: 0 12px;
-	background: var(--panel);
-	border-bottom: 1px solid var(--panel-border);
-	gap: 12px;
+header, footer {
+	background: var(--fg);
 }
 
-#toolbar button {
-	background: var(--accent);
-	color: #000;
-	border: none;
-	padding: 6px 12px;
+header {
+	padding: 10px 0px;
+}
+
+header a {
+	background: var(--secondary);
+	color: var(--bg);
+	text-decoration: none;
+	padding: 5px 20px;
 	border-radius: 4px;
-	cursor: pointer;
-	font-weight: 600;
+	margin: 12px;
+	transition: .3s background;
 }
 
-#toolbar button:hover {
-	filter: brightness(1.1);
+header a:hover {
+	background: var(--bg);
+	color: var(--secondary);
 }
 
-#editor {
+main {
 	flex: 1;
-	display: grid;
-	grid-template-columns: 260px 1fr;
-	overflow: hidden;
-}
-
-#sidebar {
-	background: var(--panel);
-	border-right: 1px solid var(--panel-border);
+	background: var(--bg);
+	min-height: 0;
 	display: flex;
-	flex-direction: column;
-	overflow: hidden;
-}
-
-#sidebar h3 {
-	margin: 0;
-	padding: 10px;
-	font-size: 14px;
-	font-weight: 600;
-	border-bottom: 1px solid var(--panel-border);
-}
-
-#selector-container {
-	padding: 8px;
-	flex: 1;
-	overflow-y: auto;
-	overflow-x: hidden;
-}
-
-#selector {
-	display: block;
-	width: 100%;
-	height: auto;
-	background: #000;
-	border: 1px solid var(--panel-border);
-	image-rendering: pixelated;
 }
 
 #canvas-container {
+	border: 10px solid var(--primary);
 	flex: 1;
-	overflow: auto;
-	padding: 0;
-	margin: 0;
-	background: var(--bg);
+	display: flex;
 }
 
-#map {
-	display: block;
-	margin: 0;
-	background: #000;
-	border: none;
-	image-rendering: pixelated;
+#viewport {
+	border: 1px solid var(--secondary);
 }
 
+#sidebar {
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+#palette-container {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	border: 10px solid var(--primary);
+	width: 256px;
+	display: flex;
+	flex-direction: column;
+}
+
+canvas {
+	flex: 1;
+	width: 100%;
+}
+
+#label {
+	background: var(--primary);
+	padding: 5px 12px;
+	font-weight: 600;
+}
+
+footer {
+	padding: 10px;
+}
+
+.links {
+	text-align: center;
+}
