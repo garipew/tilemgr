@@ -1,3 +1,95 @@
+const Connection = (function () {
+	const ws = new WebSocket(location.pathname + "/ws");
+	ws.addEventListener("message", (event) => {
+		recv_update(event.data);
+	})
+
+	let stage = 0;
+
+	function decompress(compressed) {
+		let prologue = compressed.indexOf("\n".charCodeAt(0));
+		prologue++;
+		const header = new TextDecoder("latin1").decode(compressed.slice(0, prologue));
+		const [width,height] = header.split(" ").map(Number);
+		const decompressed = Array.from({ length: height }, () => new Uint8Array(width));
+		let repeats = 0;
+		let element = 0;
+		let wid = 0;
+		let hei = 0;
+		for (let i = prologue; i + 1 < compressed.length; i += 2) {
+			repeats = compressed[i];
+			element = compressed[i + 1];
+			for (let j = 0; j < repeats; j++) {
+				decompressed[hei][wid] = element;
+				wid += 1;
+				if (wid >= width) {
+					wid = 0;
+					hei += 1;
+				}
+				if (hei >= height) {
+					return decompressed;
+				}
+			}
+		}
+		return decompressed;
+	}
+
+	function recv_update(msg){
+		var update = JSON.parse(msg);
+		switch(stage){
+			case 0:
+				cols = update.Wid
+				rows = update.Hei
+				wid = update.TileWid
+				hei = update.TileHei
+				let compressed = new Uint8Array(update.compressed)
+				tilemap = decompress(compressed)
+				if(wid <= WID_MIN || hei <= HEI_MIN) {
+					scale.x = WID_MIN/wid
+					scale.y = HEI_MIN/hei
+				}
+				map.width = wid * scale.x * cols;
+				map.height = hei * scale.y * rows;
+				stage++
+				break
+			case 1:
+				frames = update.frames.slice()
+				atlas.src = "/" + update.ImgPath
+				const sidebar = document.getElementById("selector-container")
+				selector.width = sidebar.clientWidth
+				selector.height = sidebar.clientHeight
+				atlas.onload = () => {
+					clear()
+					draw(tilemap)
+					draw_selector(frames)
+				}
+				stage++
+				break
+			default:
+				tilemap[update.y][update.x] = update.tile
+				clear()
+				draw(tilemap)
+				draw_selector(frames)
+		}
+	}
+
+	function send_update(e) {
+		const rect = map.getBoundingClientRect();
+		mouse.x = Math.floor((e.clientX - rect.left) / (wid * scale.x));
+		mouse.y = Math.floor((e.clientY - rect.top) / (hei * scale.y));
+		if(!erase) {
+			ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: tile_selected}));
+		} else {
+			ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: 0}));
+		}
+	}
+
+	return {
+		recv_update,
+		send_update
+	};
+})();
+
 const BACKGROUND = "#101010"
 const WID_MIN = 128
 const HEI_MIN = 128
@@ -5,15 +97,6 @@ const FPS = 60
 const atlas = new Image();
 const ctx = map.getContext("2d")
 const selector_ctx = selector.getContext("2d")
-
-function export_project() {
-	const a = document.createElement("a");
-	a.href = location.pathname + "/export";
-	a.download = "";
-	document.body.appendChild(a);
-	a.click();
-	a.remove();
-}
 
 function clear() {
 	ctx.fillStyle = BACKGROUND
@@ -67,48 +150,8 @@ function draw(tilemap) {
 	})
 }
 
-function decompress(compressed) {
-	let prologue = compressed.indexOf("\n".charCodeAt(0));
-	prologue++;
-	const header = new TextDecoder("latin1").decode(compressed.slice(0, prologue));
-	const [width,height] = header.split(" ").map(Number);
-	const decompressed = Array.from({ length: height }, () => new Uint8Array(width));
-	let repeats = 0;
-	let element = 0;
-	let wid = 0;
-	let hei = 0;
-	for (let i = prologue; i + 1 < compressed.length; i += 2) {
-		repeats = compressed[i];
-		element = compressed[i + 1];
-		for (let j = 0; j < repeats; j++) {
-			decompressed[hei][wid] = element;
-			wid += 1;
-			if (wid >= width) {
-				wid = 0;
-				hei += 1;
-			}
-			if (hei >= height) {
-				return decompressed;
-			}
-		}
-	}
-	return decompressed;
-}
-
-function send_update(ws, e) {
-	const rect = map.getBoundingClientRect()
-	mouse.x = Math.floor((e.clientX - rect.left) / (wid * scale.x))
-	mouse.y = Math.floor((e.clientY - rect.top) / (hei * scale.y))
-	if(!erase) {
-		ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: tile_selected}))
-	} else {
-		ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: 0}))
-	}
-}
-
 let mouse = {x: 0, y: 0, down: false}
 let tile_selected = 1
-let stage = 0
 let frames = null
 let wid = 16
 let hei = 16
@@ -116,46 +159,6 @@ let cols = 0
 let rows = 0
 let scale = {x: 1, y: 1}
 var tilemap = null
-
-const ws = new WebSocket(location.pathname + "/ws")
-ws.addEventListener("message", (event) => {
-	var msg = JSON.parse(event.data)
-	switch(stage){
-		case 0:
-			cols = msg.Wid
-			rows = msg.Hei
-			wid = msg.TileWid
-			hei = msg.TileHei
-			let compressed = new Uint8Array(msg.compressed)
-			tilemap = decompress(compressed)
-			if(wid <= WID_MIN || hei <= HEI_MIN) {
-				scale.x = WID_MIN/wid
-				scale.y = HEI_MIN/hei
-			}
-			map.width = wid * scale.x * cols;
-			map.height = hei * scale.y * rows;
-			stage++
-			break
-		case 1:
-			frames = msg.frames.slice()
-			atlas.src = "/" + msg.ImgPath
-			const sidebar = document.getElementById("selector-container")
-			selector.width = sidebar.clientWidth
-			selector.height = sidebar.clientHeight
-			atlas.onload = () => {
-				clear()
-				draw(tilemap)
-				draw_selector(frames)
-			}
-			stage++
-			break
-		default:
-			tilemap[msg.y][msg.x] = msg.tile
-			clear()
-			draw(tilemap)
-			draw_selector(frames)
-	}
-})
 
 let erase = false
 map.addEventListener("contextmenu", (e) => {
@@ -168,7 +171,7 @@ map.addEventListener("mousedown", (e) => {
 	if(e.button == 0) {
 		erase = false
 	}
-	send_update(ws, e)
+	Connection.send_update(e)
 })
 
 map.addEventListener("mouseup", (e) => {
@@ -179,7 +182,7 @@ map.addEventListener("mousemove", (e) => {
 	if(!mouse.down) {
 		return
 	}
-	send_update(ws, e)
+	Connection.send_update(e)
 })
 
 map.addEventListener("mouseleave", (e) => {
