@@ -55,38 +55,18 @@ const Parser = (function () {
 		var update = JSON.parse(msg)
 		switch(stage){
 		case 0:
-			cols = update.Wid
-			rows = update.Hei
-			wid = update.TileWid
-			hei = update.TileHei
-			let compressed = new Uint8Array(update.compressed)
-			tilemap = decompress(compressed)
-			if(wid <= WID_MIN || hei <= HEI_MIN) {
-				scale.x = WID_MIN/wid
-				scale.y = HEI_MIN/hei
-			}
-			viewport.width = wid * scale.x * cols;
-			viewport.height = hei * scale.y * rows;
+			let compressed = new Uint8Array(update.compressed);
+			Canvas.restore(update, decompress(compressed));
 			stage++
 			break
 		case 1:
-			frames = update.frames.slice()
-			atlas.src = "/" + update.ImgPath
-			const sidebar = document.getElementById("palette-container")
-			palette.width = sidebar.clientWidth
-			palette.height = sidebar.clientHeight
-			atlas.onload = () => {
-				Canvas.clear(ctx);
-				Canvas.draw(ctx, tilemap);
-				Canvas.draw_selector(selector_ctx, frames)
-			}
+			Canvas.load_atlas(update);
 			stage++
 			break
 		default:
-			tilemap[update.y][update.x] = update.tile
-			Canvas.clear(ctx);
-			Canvas.draw(ctx, tilemap);
-			Canvas.draw_selector(selector_ctx, frames)
+			Canvas.update(ctx, tilemap, update.x, update.y, update.tile);
+			Canvas.clear(selector_ctx);
+			Canvas.draw_selector(selector_ctx);
 		}
 	}
 
@@ -97,6 +77,41 @@ const Parser = (function () {
 
 const Canvas = (function () {
 	const BACKGROUND = "#101010";
+	const atlas = new Image();
+	let frames = null
+
+	function update(ctx, map, x, y, tile) {
+		map[y][x] = tile
+		clear(ctx);
+		draw(ctx, map);
+	}
+
+	function load_atlas(msg) {
+		frames = msg.frames.slice()
+		atlas.src = "/" + msg.ImgPath
+		const sidebar = document.getElementById("palette-container")
+		palette.width = sidebar.clientWidth
+		palette.height = sidebar.clientHeight
+		atlas.onload = () => {
+			clear(ctx);
+			draw(ctx, tilemap);
+			draw_selector(selector_ctx)
+		}
+	}
+
+	function restore(canvas, decompressed) {
+		cols = canvas.Wid
+		rows = canvas.Hei
+		wid = canvas.TileWid
+		hei = canvas.TileHei
+		tilemap = decompressed;
+		if(wid <= WID_MIN || hei <= HEI_MIN) {
+			scale.x = WID_MIN/wid
+			scale.y = HEI_MIN/hei
+		}
+		viewport.width = wid * scale.x * cols;
+		viewport.height = hei * scale.y * rows;
+	}
 
 	function clear(ctx) {
 		ctx.fillStyle = BACKGROUND;
@@ -122,7 +137,7 @@ const Canvas = (function () {
 		})
 	}
 
-	function draw_selector(ctx, frames) {
+	function draw_selector(ctx) {
 		if(frames == null)
 		{
 			return
@@ -151,6 +166,9 @@ const Canvas = (function () {
 	}
 
 	return {
+		update,
+		load_atlas,
+		restore,
 		clear,
 		draw,
 		draw_selector
@@ -160,7 +178,6 @@ const Canvas = (function () {
 const WID_MIN = 128
 const HEI_MIN = 128
 const FPS = 60
-const atlas = new Image();
 const ctx = viewport.getContext("2d")
 const selector_ctx = palette.getContext("2d")
 
@@ -173,7 +190,6 @@ let cols = 0
 let rows = 0
 let scale = {x: 1, y: 1}
 var tilemap = null
-let frames = null
 
 let erase = false
 viewport.addEventListener("contextmenu", (e) => {
