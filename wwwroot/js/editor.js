@@ -66,7 +66,7 @@ const Parser = (function () {
 		default:
 			Canvas.update(ctx, tilemap, update.x, update.y, update.tile);
 			Canvas.clear(selector_ctx);
-			Canvas.draw_selector(selector_ctx);
+			Canvas.draw(selector_ctx, selectormap, wid * scale.x / 2, hei * scale.y / 2);
 		}
 	}
 
@@ -83,7 +83,24 @@ const Canvas = (function () {
 	function update(ctx, map, x, y, tile) {
 		map[y][x] = tile
 		clear(ctx);
-		draw(ctx, map);
+		draw(ctx, map, wid * scale.x, hei * scale.y);
+	}
+
+	function gen_selectormap(tilecount, cols) {
+		const selectormap = [];
+		let tmp = [];
+		for(let i = 1; i < tilecount; i++) {
+			tmp.push(i);
+			if(tmp.length == cols) {
+				selectormap.push(tmp);
+				tmp = [];
+			}
+		}
+
+		if(tmp.length > 0) {
+			selectormap.push(tmp);
+		}
+		return selectormap;
 	}
 
 	function load_atlas(msg) {
@@ -92,10 +109,15 @@ const Canvas = (function () {
 		const sidebar = document.getElementById("palette-container")
 		palette.width = sidebar.clientWidth
 		palette.height = sidebar.clientHeight
+		selectormap = gen_selectormap(frames.length, palette.width / (wid * scale.x / 2));
 		atlas.onload = () => {
+			let tileH = hei * scale.y / 2;
+			selector_ctx.canvas.height = selectormap.length * tileH;
+
 			clear(ctx);
-			draw(ctx, tilemap);
-			draw_selector(selector_ctx)
+			draw(ctx, tilemap, wid * scale.x, hei * scale.y);
+			clear(selector_ctx);
+			draw(selector_ctx, selectormap, wid * scale.x / 2, tileH);
 		}
 	}
 
@@ -118,50 +140,21 @@ const Canvas = (function () {
 		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 	}
 
-	function draw(ctx, map) {
+	function draw(ctx, map, tile_wid, tile_hei) {
 		if(map == null) {
-			return
+			return;
 		}
 		map.forEach( (row, i) => {
 			row.forEach( (col, j) => {
 				if(col == 0 || col > frames.length) {
-					return
+					return;
 				}
-				let scaled = {x: wid * scale.x, y: hei * scale.y}
 				ctx.drawImage(
 					atlas,
 					frames[col-1].x, frames[col-1].y, wid, hei,
-					j * scaled.x, i * scaled.y, scaled.x, scaled.y
-				)
-			})
-		})
-	}
-
-	function draw_selector(ctx) {
-		if(frames == null)
-		{
-			return
-		}
-		const tileW = wid * scale.x / 2
-		const tileH = hei * scale.y / 2
-		const tilesPerRow = Math.floor(ctx.canvas.width / tileW);
-		const rowsNeeded = Math.ceil(frames.length / tilesPerRow);
-		ctx.canvas.height = rowsNeeded * tileH;
-		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-		col = 0
-		row = 0
-		frames.forEach( (frame, i) => {
-			ctx.drawImage(
-				atlas,
-				frame.x, frame.y, wid, hei,
-				col * tileW, row * tileH, tileW, tileH
-			)
-			col++;
-			if(col >= tilesPerRow)
-			{
-				row++
-				col = 0
-			}
+					j * tile_wid, i * tile_hei, tile_wid, tile_hei
+				);
+			});
 		});
 	}
 
@@ -170,8 +163,7 @@ const Canvas = (function () {
 		load_atlas,
 		restore,
 		clear,
-		draw,
-		draw_selector
+		draw
 	};
 })();
 
@@ -189,7 +181,8 @@ let hei = 16
 let cols = 0
 let rows = 0
 let scale = {x: 1, y: 1}
-var tilemap = null
+let tilemap = null
+let selectormap = null
 
 let erase = false
 viewport.addEventListener("contextmenu", (e) => {
