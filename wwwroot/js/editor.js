@@ -6,8 +6,8 @@ const Connection = (function () {
 
 	function send_update(e) {
 		const rect = viewport.getBoundingClientRect();
-		mouse.x = Math.floor((e.clientX - rect.left) / (wid * scale.x));
-		mouse.y = Math.floor((e.clientY - rect.top) / (hei * scale.y));
+		mouse.x = Math.floor((e.clientX - rect.left) / tilemap_canvas.view_wid);
+		mouse.y = Math.floor((e.clientY - rect.top) / tilemap_canvas.view_hei);
 		if(!erase) {
 			ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: tile_selected}));
 		} else {
@@ -56,17 +56,21 @@ const Parser = (function () {
 		switch(stage){
 		case 0:
 			let compressed = new Uint8Array(update.compressed);
-			Canvas.restore(update, decompress(compressed));
-			stage++
+			tilemap_canvas.restore(update, decompress(compressed));
+			stage++;
 			break
 		case 1:
 			Canvas.load_atlas(update);
-			stage++
-			break
+			palette_canvas.gen_selectormap(Canvas.frames.length);
+			stage++;
+			// NOTE(garipew): Intentionally missing break here, to flow
+			// to next stage without waiting for update
 		default:
-			Canvas.update(ctx, tilemap, update.x, update.y, update.tile);
-			Canvas.clear(selector_ctx);
-			Canvas.draw(selector_ctx, selectormap, wid * scale.x / 2, hei * scale.y / 2);
+			tilemap_canvas.update(update.x, update.y, update.tile);
+			tilemap_canvas.clear();
+			tilemap_canvas.draw();
+			palette_canvas.clear();
+			palette_canvas.draw();
 		}
 	}
 
@@ -75,114 +79,125 @@ const Parser = (function () {
 	};
 })();
 
-const Canvas = (function () {
-	const BACKGROUND = "#101010";
-	const atlas = new Image();
-	let frames = null
+/*
+ * TODO(garipew): Add viewport
+ * 			- viewport should contain: cols, rows, x and y
+ * 			- should handle navigation
+ */
+class Canvas {
+	static BACKGROUND = "#101010";
+	static atlas = new Image();
+	static frames = null;
+	static WID_MIN = 128;
+	static HEI_MIN = 128;
+	static actual_wid;
+	static actual_hei;
+	ctx;
+	cols;
+	rows;
+	map;
+	view_wid;
+	view_hei;
+	view;
 
-	function update(ctx, map, x, y, tile) {
-		map[y][x] = tile
-		clear(ctx);
-		draw(ctx, map, wid * scale.x, hei * scale.y);
+	constructor(ctx) {
+		this.ctx = ctx;
 	}
 
-	function gen_selectormap(tilecount, cols) {
-		const selectormap = [];
+	restore(canvas, decompressed) {
+		this.cols = canvas.Wid
+		this.rows = canvas.Hei
+
+		Canvas.actual_wid = canvas.TileWid;
+		Canvas.actual_hei = canvas.TileHei;
+
+		this.view_wid = Canvas.WID_MIN;
+		this.view_hei = Canvas.HEI_MIN;
+
+		this.map = decompressed;
+
+		this.ctx.canvas.width = this.view_wid * this.cols;
+		this.ctx.canvas.height = this.view_hei * this.rows;
+	}
+
+	gen_selectormap(tilecount) {
+		this.view_wid = Canvas.WID_MIN / 2;
+		this.view_hei = Canvas.HEI_MIN / 2;
+
+		const cols = Math.floor(this.ctx.canvas.width / this.view_wid);
+		this.map = [];
 		let tmp = [];
 		for(let i = 1; i < tilecount; i++) {
 			tmp.push(i);
 			if(tmp.length == cols) {
-				selectormap.push(tmp);
+				this.map.push(tmp);
 				tmp = [];
 			}
 		}
 
 		if(tmp.length > 0) {
-			selectormap.push(tmp);
+			this.map.push(tmp);
 		}
-		return selectormap;
+		this.cols = cols;
+		this.rows = this.map.length;
+
+		this.ctx.canvas.width = this.cols * this.view_wid;
+		this.ctx.canvas.height = this.rows * this.view_hei;
 	}
 
-	function load_atlas(msg) {
-		frames = msg.frames.slice()
-		atlas.src = "/" + msg.ImgPath
-		const sidebar = document.getElementById("palette-container")
-		palette.width = sidebar.clientWidth
-		palette.height = sidebar.clientHeight
-		selectormap = gen_selectormap(frames.length, palette.width / (wid * scale.x / 2));
-		atlas.onload = () => {
-			let tileH = hei * scale.y / 2;
-			selector_ctx.canvas.height = selectormap.length * tileH;
-
-			clear(ctx);
-			draw(ctx, tilemap, wid * scale.x, hei * scale.y);
-			clear(selector_ctx);
-			draw(selector_ctx, selectormap, wid * scale.x / 2, tileH);
-		}
+	static load_atlas(msg) {
+		Canvas.frames = msg.frames.slice()
+		Canvas.atlas.src = "/" + msg.ImgPath
 	}
 
-	function restore(canvas, decompressed) {
-		cols = canvas.Wid
-		rows = canvas.Hei
-		wid = canvas.TileWid
-		hei = canvas.TileHei
-		tilemap = decompressed;
-		if(wid <= WID_MIN || hei <= HEI_MIN) {
-			scale.x = WID_MIN/wid
-			scale.y = HEI_MIN/hei
-		}
-		viewport.width = wid * scale.x * cols;
-		viewport.height = hei * scale.y * rows;
-	}
-
-	function clear(ctx) {
-		ctx.fillStyle = BACKGROUND;
-		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-	}
-
-	function draw(ctx, map, tile_wid, tile_hei) {
-		if(map == null) {
+	update(x, y, tile) {
+		if(x === undefined || y === undefined || tile === undefined) {
 			return;
 		}
-		map.forEach( (row, i) => {
+		if(x < 0 || x >= this.cols) {
+			return;
+		}
+		if(y < 0 || y >= this.rows) {
+			return;
+		}
+		if(tile < 0 || tile >= Canvas.frames.length) {
+			return;
+		}
+		this.map[y][x] = tile;
+	}
+
+	clear() {
+		this.ctx.fillStyle = Canvas.BACKGROUND;
+		this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+	}
+
+	draw() {
+		if(this.map == null) {
+			return;
+		}
+		this.map.forEach( (row, i) => {
 			row.forEach( (col, j) => {
-				if(col == 0 || col > frames.length) {
+				if(col == 0 || col > Canvas.frames.length) {
 					return;
 				}
-				ctx.drawImage(
-					atlas,
-					frames[col-1].x, frames[col-1].y, wid, hei,
-					j * tile_wid, i * tile_hei, tile_wid, tile_hei
+				this.ctx.drawImage(
+					Canvas.atlas,
+					Canvas.frames[col-1].x, Canvas.frames[col-1].y, Canvas.actual_wid, Canvas.actual_hei,
+					j * this.view_wid, i * this.view_hei, this.view_wid, this.view_hei
 				);
 			});
 		});
 	}
+}
 
-	return {
-		update,
-		load_atlas,
-		restore,
-		clear,
-		draw
-	};
-})();
-
-const WID_MIN = 128
-const HEI_MIN = 128
 const FPS = 60
-const ctx = viewport.getContext("2d")
-const selector_ctx = palette.getContext("2d")
+
+const tilemap_canvas = new Canvas(viewport.getContext("2d"));
+const palette_canvas = new Canvas(palette.getContext("2d"));
 
 let mouse = {x: 0, y: 0, down: false}
 let tile_selected = 1
 let stage = 0
-let wid = 16
-let hei = 16
-let cols = 0
-let rows = 0
-let scale = {x: 1, y: 1}
-let tilemap = null
-let selectormap = null
 
 let erase = false
 viewport.addEventListener("contextmenu", (e) => {
@@ -213,13 +228,14 @@ viewport.addEventListener("mouseleave", (e) => {
 	mouse.down = false
 })
 
+// TODO(garipew): Not working. No tile other than the first is being selected.
 palette.addEventListener("mousedown", (e) => {
 	const rect = palette.getBoundingClientRect();
 	const containerRect = document.getElementById("palette-container").getBoundingClientRect();
 	const scrollTop = document.getElementById("palette-container").scrollTop;
-	const tileW = wid * scale.x / 2;
-	const tileH = hei * scale.y / 2;
-	const tilesPerRow = Math.floor(palette.width / tileW);
+	const tileW = palette_canvas.view_wid;
+	const tileH = palette_canvas.view_hei;
+	const tilesPerRow = palette_canvas.cols;
 	
 	// Calculate position relative to canvas, accounting for scroll
 	const x = e.clientX - rect.left;
