@@ -1,8 +1,6 @@
 class Viewport {
 	static MIN_COLS = 5;
 	static MIN_ROWS = 5;
-	static MAX_COLS = 20;
-	static MAX_ROWS = 20;
 	cols;
 	rows;
 	x;
@@ -20,14 +18,10 @@ class Viewport {
 		this.cols += ratio;
 		if(this.cols < Viewport.MIN_COLS) {
 			this.cols = Viewport.MIN_COLS;
-		} else if(this.cols > Viewport.MAX_COLS) {
-			this.cols = Viewport.MAX_COLS;
 		}
 		this.rows += ratio;
 		if(this.rows < Viewport.MIN_ROWS) {
 			this.rows = Viewport.MIN_ROWS;
-		} else if(this.rows > Viewport.MAX_ROWS) {
-			this.rows = Viewport.MAX_ROWS;
 		}
 	}
 }
@@ -74,11 +68,16 @@ class Canvas {
 
 	zoom(ratio) {
 		this.view.zoom(ratio);
+		if(this.view.cols > this.cols) {
+			this.view.cols = this.cols;
+		}
+		if(this.view.rows > this.rows) {
+			this.view.rows = this.rows;
+		}
 		this.ctx.canvas.width = Canvas.wid * this.view.cols;
 		this.ctx.canvas.height = Canvas.hei * this.view.rows;
 		this.clear();
 		this.draw();
-		console.log(this.view.cols + " " + this.view.rows);
 	}
 
 	restore(canvas, decompressed) {
@@ -88,7 +87,7 @@ class Canvas {
 		Canvas.wid = canvas.TileWid;
 		Canvas.hei = canvas.TileHei;
 
-		this.view = new Viewport(20, 20);
+		this.view = new Viewport(Math.min(this.cols, 20), Math.min(this.rows, 20));
 
 		this.map = decompressed;
 
