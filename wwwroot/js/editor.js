@@ -135,9 +135,9 @@ class Canvas {
 			return;
 		}
 		const start_row = Math.floor(this.view.y);
-		const end_row = Math.min(start_row + this.view.rows, this.rows);
+		const end_row = Math.min(Math.ceil(this.view.y + this.view.rows), this.rows);
 		const start_col = Math.floor(this.view.x);
-		const end_col = Math.min(start_col + this.view.cols, this.cols);
+		const end_col = Math.min(Math.ceil(this.view.x + this.view.cols), this.cols);
 		const scale = this.view.get_scale();
 		for(let i = start_row; i < end_row; i++) {
 			const y_pos = (i - this.view.y) * Canvas.hei;
@@ -162,8 +162,8 @@ class Canvas {
 		const tileH = rect.height / this.view.rows;
 
 		return {
-			x: Math.floor((screen_x - rect.left) / tileW) + this.view.x,
-			y: Math.floor((screen_y - rect.top) / tileH) + this.view.y
+			x: Math.floor((screen_x - rect.left) / tileW) + Math.floor(this.view.x),
+			y: Math.floor((screen_y - rect.top) / tileH) + Math.floor(this.view.y)
 		}
 	}
 }
@@ -299,4 +299,12 @@ palette.addEventListener("mousedown", (e) => {
 		}
 		tile_selected = idx + 1;
 	}
+})
+
+palette.addEventListener("wheel", (e) => {
+	if(e.deltaY > 0) {
+		palette_canvas.scroll_vertical(0.5);
+		return;
+	}
+	palette_canvas.scroll_vertical(-0.5);
 })
