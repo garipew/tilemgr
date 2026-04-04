@@ -3,47 +3,80 @@
  * 			- viewport should contain: cols, rows, x and y
  * 			- should handle navigation
  */
+class Viewport {
+	cols;
+	rows;
+	x;
+	y;
+
+	constructor(cols, rows) {
+		this.cols = cols;
+		this.rows = rows;
+
+		this.x = 0;
+		this.y = 0;
+	}
+}
+
 class Canvas {
 	static BACKGROUND = "#101010";
 	static atlas = new Image();
 	static frames = null;
-	static WID_MIN = 128;
-	static HEI_MIN = 128;
-	static actual_wid;
-	static actual_hei;
+	static wid;
+	static hei;
 	ctx;
 	cols;
 	rows;
 	map;
-	view_wid;
-	view_hei;
 	view;
 
 	constructor(ctx) {
 		this.ctx = ctx;
 	}
 
+	scroll_vertical(value) {
+		this.view.y += value;
+		if(this.view.y < 0) {
+			this.view.y = 0;
+		}
+		if(this.view.y + this.view.rows > this.rows) {
+			this.view.y = this.rows - this.view.rows;
+		}
+		this.clear();
+		this.draw();
+	}
+
+	scroll_horizontal(value) {
+		this.view.x += value;
+		if(this.view.x < 0) {
+			this.view.x = 0;
+		}
+		if(this.view.x + this.view.cols > this.cols) {
+			this.view.x = this.cols - this.view.cols;
+		}
+		this.clear();
+		this.draw();
+	}
+
 	restore(canvas, decompressed) {
 		this.cols = canvas.Wid
 		this.rows = canvas.Hei
 
-		Canvas.actual_wid = canvas.TileWid;
-		Canvas.actual_hei = canvas.TileHei;
+		Canvas.wid = canvas.TileWid;
+		Canvas.hei = canvas.TileHei;
 
-		this.view_wid = Canvas.WID_MIN;
-		this.view_hei = Canvas.HEI_MIN;
+		this.view = new Viewport(20, 20);
 
 		this.map = decompressed;
 
-		this.ctx.canvas.width = this.view_wid * this.cols;
-		this.ctx.canvas.height = this.view_hei * this.rows;
+		this.ctx.canvas.width = Canvas.wid * this.cols;
+		this.ctx.canvas.height = Canvas.hei * this.rows;
 	}
 
 	gen_selectormap(tilecount) {
-		this.view_wid = Canvas.WID_MIN / 2;
-		this.view_hei = Canvas.HEI_MIN / 2;
+		this.view = new Viewport(4, 10);
 
-		const cols = Math.floor(this.ctx.canvas.width / this.view_wid);
+		const cols = 4;
 		this.map = [];
 		let tmp = [];
 		for(let i = 1; i < tilecount; i++) {
@@ -55,13 +88,16 @@ class Canvas {
 		}
 
 		if(tmp.length > 0) {
+			for(let i = tmp.length; i < cols; i++){
+				tmp.push(0);
+			}
 			this.map.push(tmp);
 		}
 		this.cols = cols;
 		this.rows = this.map.length;
 
-		this.ctx.canvas.width = this.cols * this.view_wid;
-		this.ctx.canvas.height = this.rows * this.view_hei;
+		this.ctx.canvas.width = this.view.cols * Canvas.wid;
+		this.ctx.canvas.height = this.view.rows * Canvas.hei;
 	}
 
 	static load_atlas(msg) {
@@ -94,18 +130,25 @@ class Canvas {
 		if(this.map == null) {
 			return;
 		}
-		this.map.forEach( (row, i) => {
-			row.forEach( (col, j) => {
-				if(col == 0 || col > Canvas.frames.length) {
+		const start_row = Math.floor(this.view.y);
+		const end_row = Math.min(start_row + this.view.rows, this.rows);
+		const start_col = Math.floor(this.view.x);
+		const end_col = Math.min(start_col + this.view.cols, this.cols);
+		for(let i = start_row; i < end_row; i++) {
+			const y_pos = (i - this.view.y) * Canvas.hei;
+			for(let j = start_col; j < end_col; j++) {
+				const x_pos = (j - this.view.x) * Canvas.wid;
+				const tile = this.map[i][j];
+				if(tile == 0 || tile >= Canvas.frames.length) {
 					return;
 				}
 				this.ctx.drawImage(
 					Canvas.atlas,
-					Canvas.frames[col-1].x, Canvas.frames[col-1].y, Canvas.actual_wid, Canvas.actual_hei,
-					j * this.view_wid, i * this.view_hei, this.view_wid, this.view_hei
+					Canvas.frames[tile-1].x, Canvas.frames[tile-1].y, Canvas.wid, Canvas.hei,
+					x_pos, y_pos, Canvas.wid, Canvas.hei
 				);
-			});
-		});
+			}
+		}
 	}
 }
 
@@ -184,8 +227,10 @@ const Connection = (function () {
 
 	function send_update(e) {
 		const rect = viewport.getBoundingClientRect();
-		mouse.x = Math.floor((e.clientX - rect.left) / tilemap_canvas.view_wid);
-		mouse.y = Math.floor((e.clientY - rect.top) / tilemap_canvas.view_hei);
+		mouse = {
+			x: Math.floor((e.clientX - rect.left) / Canvas.wid),
+			y: Math.floor((e.clientY - rect.top) / Canvas.hei)
+		};
 		if(!erase) {
 			ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: tile_selected}));
 		} else {
@@ -236,8 +281,8 @@ palette.addEventListener("mousedown", (e) => {
 	const rect = palette.getBoundingClientRect();
 	const containerRect = document.getElementById("palette-container").getBoundingClientRect();
 	const scrollTop = document.getElementById("palette-container").scrollTop;
-	const tileW = palette_canvas.view_wid;
-	const tileH = palette_canvas.view_hei;
+	const tileW = Canvas.wid;
+	const tileH = Canvas.hei;
 	const tilesPerRow = palette_canvas.cols;
 	
 	// Calculate position relative to canvas, accounting for scroll

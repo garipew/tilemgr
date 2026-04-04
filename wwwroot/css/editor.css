@@ -77,8 +77,6 @@ main {
 
 #palette-container {
 	flex: 1;
-	min-height: 0;
-	overflow-y: auto;
 	border: 10px solid var(--primary);
 	width: 256px;
 	display: flex;
