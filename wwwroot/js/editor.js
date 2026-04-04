@@ -155,6 +155,17 @@ class Canvas {
 			}
 		}
 	}
+
+	get_tile_pos(screen_x, screen_y) {
+		const rect = this.ctx.canvas.getBoundingClientRect();
+		const tileW = rect.width / this.view.cols;
+		const tileH = rect.height / this.view.rows;
+
+		return {
+			x: Math.floor((screen_x - rect.left) / tileW) + this.view.x,
+			y: Math.floor((screen_y - rect.top) / tileH) + this.view.y
+		}
+	}
 }
 
 const tilemap_canvas = new Canvas(viewport.getContext("2d"));
@@ -231,17 +242,8 @@ const Connection = (function () {
 	})
 
 	function send_update(e) {
-		const rect = tilemap_canvas.ctx.canvas.getBoundingClientRect();
-		const tileW = rect.width / tilemap_canvas.view.cols;
-		const tileH = rect.height / tilemap_canvas.view.rows;
-
-		const x = e.clientX - rect.left;
-		const y = e.clientY - rect.top;
-
-		const tileX = Math.floor(x / tileW) + tilemap_canvas.view.x;
-		const tileY = Math.floor(y / tileH) + tilemap_canvas.view.y;
-
-		let msg = {x: tileX, y: tileY, tile: tile_selected};
+		const tile = tilemap_canvas.get_tile_pos(e.clientX, e.clientY);
+		let msg = {x: tile.x, y: tile.y, tile: tile_selected};
 		if(erase) {
 			msg.tile = 0;
 		}
@@ -288,17 +290,9 @@ viewport.addEventListener("mouseleave", (e) => {
 })
 
 palette.addEventListener("mousedown", (e) => {
-	const rect = palette_canvas.ctx.canvas.getBoundingClientRect();
-	const tileW = rect.width / palette_canvas.view.cols;
-	const tileH = rect.height / palette_canvas.view.rows;
-	
-	const x = e.clientX - rect.left;
-	const y = e.clientY - rect.top;
+	const tile = palette_canvas.get_tile_pos(e.clientX, e.clientY);
 
-	const tileX = Math.floor(x / tileW);
-	const tileY = Math.floor(y / tileH) + palette_canvas.view.y;
-
-	const idx = tileX + tileY * palette_canvas.view.cols;
+	const idx = tile.x + tile.y * palette_canvas.view.cols;
 	if(e.button === 0) {
 		if(idx < 0 || idx >= Canvas.frames.length) {
 			return;
