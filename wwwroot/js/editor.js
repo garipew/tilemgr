@@ -1,4 +1,6 @@
 class Viewport {
+	static MIN_COLS = 5;
+	static MIN_ROWS = 5;
 	static MAX_COLS = 20;
 	static MAX_ROWS = 20;
 	cols;
@@ -14,10 +16,18 @@ class Viewport {
 		this.y = 0;
 	}
 
-	get_scale() {
-		return {
-			x: Viewport.MAX_COLS / this.cols,
-			y: Viewport.MAX_ROWS / this.rows
+	zoom(ratio) {
+		this.cols += ratio;
+		if(this.cols < Viewport.MIN_COLS) {
+			this.cols = Viewport.MIN_COLS;
+		} else if(this.cols > Viewport.MAX_COLS) {
+			this.cols = Viewport.MAX_COLS;
+		}
+		this.rows += ratio;
+		if(this.rows < Viewport.MIN_ROWS) {
+			this.rows = Viewport.MIN_ROWS;
+		} else if(this.rows > Viewport.MAX_ROWS) {
+			this.rows = Viewport.MAX_ROWS;
 		}
 	}
 }
@@ -62,6 +72,15 @@ class Canvas {
 		this.draw();
 	}
 
+	zoom(ratio) {
+		this.view.zoom(ratio);
+		this.ctx.canvas.width = Canvas.wid * this.view.cols;
+		this.ctx.canvas.height = Canvas.hei * this.view.rows;
+		this.clear();
+		this.draw();
+		console.log(this.view.cols + " " + this.view.rows);
+	}
+
 	restore(canvas, decompressed) {
 		this.cols = canvas.Wid
 		this.rows = canvas.Hei
@@ -73,8 +92,8 @@ class Canvas {
 
 		this.map = decompressed;
 
-		this.ctx.canvas.width = Canvas.wid * Viewport.MAX_COLS;
-		this.ctx.canvas.height = Canvas.hei * Viewport.MAX_ROWS;
+		this.ctx.canvas.width = Canvas.wid * this.view.cols;
+		this.ctx.canvas.height = Canvas.hei * this.view.rows;
 	}
 
 	gen_selectormap(tilecount) {
@@ -100,8 +119,8 @@ class Canvas {
 		this.cols = cols;
 		this.rows = this.map.length;
 
-		this.ctx.canvas.width = Canvas.wid * Viewport.MAX_COLS;
-		this.ctx.canvas.height = Canvas.hei * Viewport.MAX_ROWS;
+		this.ctx.canvas.width = Canvas.wid * this.view.cols;
+		this.ctx.canvas.height = Canvas.hei * this.view.rows;
 	}
 
 	static load_atlas(msg) {
@@ -138,7 +157,6 @@ class Canvas {
 		const end_row = Math.min(Math.ceil(this.view.y + this.view.rows), this.rows);
 		const start_col = Math.floor(this.view.x);
 		const end_col = Math.min(Math.ceil(this.view.x + this.view.cols), this.cols);
-		const scale = this.view.get_scale();
 		for(let i = start_row; i < end_row; i++) {
 			const y_pos = (i - this.view.y) * Canvas.hei;
 			for(let j = start_col; j < end_col; j++) {
@@ -150,7 +168,7 @@ class Canvas {
 				this.ctx.drawImage(
 					Canvas.atlas,
 					Canvas.frames[tile-1].x, Canvas.frames[tile-1].y, Canvas.wid, Canvas.hei,
-					x_pos * scale.x, y_pos * scale.y, Canvas.wid * scale.x, Canvas.hei * scale.y
+					x_pos, y_pos, Canvas.wid, Canvas.hei
 				);
 			}
 		}
@@ -302,9 +320,17 @@ palette.addEventListener("mousedown", (e) => {
 })
 
 palette.addEventListener("wheel", (e) => {
+	let scroll = -0.5;
 	if(e.deltaY > 0) {
-		palette_canvas.scroll_vertical(0.5);
-		return;
+		scroll = 0.5;
 	}
-	palette_canvas.scroll_vertical(-0.5);
+	palette_canvas.scroll_vertical(scroll);
+})
+
+viewport.addEventListener("wheel", (e) => {
+	let ratio = -0.5;
+	if(e.deltaY > 0) {
+		ratio = 0.5;
+	}
+	tilemap_canvas.zoom(ratio);
 })
