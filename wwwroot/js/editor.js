@@ -1,9 +1,6 @@
-/*
- * TODO(garipew): Add viewport
- * 			- viewport should contain: cols, rows, x and y
- * 			- should handle navigation
- */
 class Viewport {
+	static MAX_COLS = 20;
+	static MAX_ROWS = 20;
 	cols;
 	rows;
 	x;
@@ -15,6 +12,13 @@ class Viewport {
 
 		this.x = 0;
 		this.y = 0;
+	}
+
+	get_scale() {
+		return {
+			x: Viewport.MAX_COLS / this.cols,
+			y: Viewport.MAX_ROWS / this.rows
+		}
 	}
 }
 
@@ -69,8 +73,8 @@ class Canvas {
 
 		this.map = decompressed;
 
-		this.ctx.canvas.width = Canvas.wid * this.cols;
-		this.ctx.canvas.height = Canvas.hei * this.rows;
+		this.ctx.canvas.width = Canvas.wid * Viewport.MAX_COLS;
+		this.ctx.canvas.height = Canvas.hei * Viewport.MAX_ROWS;
 	}
 
 	gen_selectormap(tilecount) {
@@ -96,8 +100,8 @@ class Canvas {
 		this.cols = cols;
 		this.rows = this.map.length;
 
-		this.ctx.canvas.width = this.view.cols * Canvas.wid;
-		this.ctx.canvas.height = this.view.rows * Canvas.hei;
+		this.ctx.canvas.width = Canvas.wid * Viewport.MAX_COLS;
+		this.ctx.canvas.height = Canvas.hei * Viewport.MAX_ROWS;
 	}
 
 	static load_atlas(msg) {
@@ -134,18 +138,19 @@ class Canvas {
 		const end_row = Math.min(start_row + this.view.rows, this.rows);
 		const start_col = Math.floor(this.view.x);
 		const end_col = Math.min(start_col + this.view.cols, this.cols);
+		const scale = this.view.get_scale();
 		for(let i = start_row; i < end_row; i++) {
 			const y_pos = (i - this.view.y) * Canvas.hei;
 			for(let j = start_col; j < end_col; j++) {
 				const x_pos = (j - this.view.x) * Canvas.wid;
 				const tile = this.map[i][j];
 				if(tile == 0 || tile >= Canvas.frames.length) {
-					return;
+					continue;
 				}
 				this.ctx.drawImage(
 					Canvas.atlas,
 					Canvas.frames[tile-1].x, Canvas.frames[tile-1].y, Canvas.wid, Canvas.hei,
-					x_pos, y_pos, Canvas.wid, Canvas.hei
+					x_pos * scale.x, y_pos * scale.y, Canvas.wid * scale.x, Canvas.hei * scale.y
 				);
 			}
 		}
@@ -226,16 +231,22 @@ const Connection = (function () {
 	})
 
 	function send_update(e) {
-		const rect = viewport.getBoundingClientRect();
-		mouse = {
-			x: Math.floor((e.clientX - rect.left) / Canvas.wid),
-			y: Math.floor((e.clientY - rect.top) / Canvas.hei)
-		};
-		if(!erase) {
-			ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: tile_selected}));
-		} else {
-			ws.send(JSON.stringify({x: mouse.x, y: mouse.y, tile: 0}));
+		const rect = tilemap_canvas.ctx.canvas.getBoundingClientRect();
+		const tileW = rect.width / tilemap_canvas.view.cols;
+		const tileH = rect.height / tilemap_canvas.view.rows;
+
+		const x = e.clientX - rect.left;
+		const y = e.clientY - rect.top;
+
+		const tileX = Math.floor(x / tileW) + tilemap_canvas.view.x;
+		const tileY = Math.floor(y / tileH) + tilemap_canvas.view.y;
+
+		let msg = {x: tileX, y: tileY, tile: tile_selected};
+		if(erase) {
+			msg.tile = 0;
 		}
+		msg = JSON.stringify(msg);
+		ws.send(msg);
 	}
 
 	return {
@@ -243,7 +254,7 @@ const Connection = (function () {
 	};
 })();
 
-let mouse = {x: 0, y: 0, down: false}
+let mouse = {down: false}
 let tile_selected = 1
 let stage = 0
 
@@ -277,7 +288,7 @@ viewport.addEventListener("mouseleave", (e) => {
 })
 
 palette.addEventListener("mousedown", (e) => {
-	const rect = palette.getBoundingClientRect();
+	const rect = palette_canvas.ctx.canvas.getBoundingClientRect();
 	const tileW = rect.width / palette_canvas.view.cols;
 	const tileH = rect.height / palette_canvas.view.rows;
 	
