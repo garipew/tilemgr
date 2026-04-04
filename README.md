@@ -2,7 +2,7 @@
 
 Tilemgr is a **self‑hosted, real‑time tilemap editor** that runs locally and uses a web browser as its UI.
 
-![screenshot](screenshots/canvas.png)
+![Screenshot](screenshots/canvas.png)
 
 It is designed to be:
 
