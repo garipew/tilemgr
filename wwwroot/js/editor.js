@@ -276,25 +276,20 @@ viewport.addEventListener("mouseleave", (e) => {
 	mouse.down = false
 })
 
-// TODO(garipew): Not working. No tile other than the first is being selected.
 palette.addEventListener("mousedown", (e) => {
 	const rect = palette.getBoundingClientRect();
-	const containerRect = document.getElementById("palette-container").getBoundingClientRect();
-	const scrollTop = document.getElementById("palette-container").scrollTop;
-	const tileW = Canvas.wid;
-	const tileH = Canvas.hei;
-	const tilesPerRow = palette_canvas.cols;
+	const tileW = rect.width / palette_canvas.view.cols;
+	const tileH = rect.height / palette_canvas.view.rows;
 	
-	// Calculate position relative to canvas, accounting for scroll
 	const x = e.clientX - rect.left;
-	const y = (e.clientY - containerRect.top) + scrollTop;
+	const y = e.clientY - rect.top;
 
 	const tileX = Math.floor(x / tileW);
-	const tileY = Math.floor(y / tileH);
+	const tileY = Math.floor(y / tileH) + palette_canvas.view.y;
 
-	const idx = tileX + tileY * tilesPerRow;
+	const idx = tileX + tileY * palette_canvas.view.cols;
 	if(e.button === 0) {
-		if(idx < 0 || idx >= frames.length) {
+		if(idx < 0 || idx >= Canvas.frames.length) {
 			return;
 		}
 		tile_selected = idx + 1;
