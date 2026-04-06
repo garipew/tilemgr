@@ -1,16 +1,8 @@
 # Tilemgr
 
-Tilemgr is a **self‑hosted, real‑time tilemap editor** that runs locally and uses a web browser as its UI.
+> A real-time collaborative tilemap editor built to explore distributed state management on the web.
 
-![Screenshot](screenshots/canvas.png)
-
-It is designed to be:
-
-* **Local‑first** — no external services required
-* **Explicitly networked** — real‑time updates via WebSockets
-* **Tool‑oriented** — focused on fast iteration rather than presentation
-
-Tilemgr is intended for developers who want a lightweight, hackable tile editor that integrates easily into custom pipelines.
+![demo](assets/demo.gif)
 
 ---
 
@@ -21,19 +13,29 @@ Tilemgr is intended for developers who want a lightweight, hackable tile editor 
 * Local project storage
 * PNG tileset import
 * Binary export format with RLE compression
-* Minimal UI, editor‑first workflow
 
 ---
 
-## Running
+## Export format
 
-Requires the .NET SDK.
+Tilemgr allows users to export projects to a custom binary format at any time. The structure of the binary file is very simple:
+
+- **First line:** width and height as space-separated integers
+- **Remaining content:** the tilemap data compressed with RLE
+
+The format was designed with the full tool cycle in mind. An editor is only useful if you can consume its output.
+
+---
+
+## Running locally
+
+Requires the .NET 9 SDK.
 
 ```bash
+git clone https://github.com/garipew/tilemgr
+cd tilemgr
 dotnet run
 ```
-
-By default, the server hosts the editor locally. Open the provided address in your browser to begin.
 
 ---
 
@@ -70,39 +72,6 @@ The editor is the core of Tilemgr.
 * Real‑time updates over WebSockets
 
 The UI is intentionally minimal and optimized for precision rather than decoration.
-
----
-
-## Exporting
-
-Projects can be exported to a compact binary format suitable for custom engines or tooling.
-
-### Binary format
-
-The exported file consists of:
-
-1. **Header**
-
-    * As a string, in the format: "{Width} {Height}\n"
-
-2. **Tile data**
-
-   * Tile indices encoded using **Run‑Length Encoding (RLE)**
-
-This format is designed to be trivial to parse and efficient to load.
-
----
-
-## Philosophy
-
-Tilemgr intentionally avoids:
-
-* Cloud dependencies
-* Account systems
-* Heavy frameworks
-* Overdesigned UI layers
-
-The goal is to provide a **reliable, inspectable tool** that does one thing well: editing tilemaps.
 
 ---
 
