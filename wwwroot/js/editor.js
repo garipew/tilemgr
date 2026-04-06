@@ -179,8 +179,8 @@ class Canvas {
 		const tileH = rect.height / this.view.rows;
 
 		return {
-			x: Math.floor((screen_x - rect.left) / tileW) + Math.floor(this.view.x),
-			y: Math.floor((screen_y - rect.top) / tileH) + Math.floor(this.view.y)
+			x: Math.floor(((screen_x - rect.left) / tileW) + this.view.x),
+			y: Math.floor(((screen_y - rect.top) / tileH) + this.view.y)
 		}
 	}
 }
