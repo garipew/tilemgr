@@ -10,8 +10,6 @@
 
 Tilemgr is a web exploration exercise. It lets multiple users edit a tilemap together in the browser, with changes synchronized in real time over WebSockets. You can import PNG tilesets, paint tiles and export the result to a compact binary format.
 
---- 
-
 ## Getting started
 
 Requires the .NET 9 SDK.
@@ -22,9 +20,7 @@ cd tilemgr
 dotnet run
 ```
 
-Then open ´http://localhost:5273´ in your browser.
-
----
+Then open `http://localhost:5273` in your browser.
 
 ## Export format
 
@@ -34,10 +30,6 @@ Tilemgr allows users to export projects to a custom binary format at any time. T
 - **Remaining content:** the tilemap data compressed with RLE
 
 The format was designed with the full cycle of the tool in mind. An editor is only useful if you can consume its output.
-
-```
-
----
 
 ## Roadmap
 ### Back-end
@@ -73,15 +65,11 @@ The format was designed with the full cycle of the tool in mind. An editor is on
 - [x] Add zoom ([commit](https://github.com/garipew/tilemgr/commit/10c5996b82fa970b46db4b2e7b4263dae0ea91df))
 - [x] Update editor page layout ([commit](https://github.com/garipew/tilemgr/commit/42762836b87240f87d0da56f9f620b3e8bbfcad9))
 - [x] Modularize editor.js ([commit](https://github.com/garipew/tilemgr/commit/aaec265177cd5f4dbe04d652bfce45b422ef7fa8))
-- [x] Update README, add roadmap
-
----
+- [x] Update README, add roadmap([commit](https://github.com/garipew/tilemgr/commit/a57ce6344bc38e938586274174cac7b384e8654e))
 
 ## Contributing
 
 Issues and pull requests are welcomed.
-
-___
 
 ## License
 
