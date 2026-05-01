@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using System.Net.WebSockets;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.FileProviders;
@@ -6,6 +7,10 @@ using Microsoft.Extensions.FileProviders;
 using Pagemgr;
 using Tilemgr;
 using Handler;
+
+///////////////////////////////
+///	DB setup
+///////////////////////////////
 
 using var conn = new SqliteConnection("Data Source=data.db");
 conn.Open();
@@ -25,6 +30,10 @@ create.CommandText = @" CREATE TABLE IF NOT EXISTS Projects (
 		CreationDate datetime DEFAULT CURRENT_TIMESTAMP,
 		ProjectName varchar(255))";
 create.ExecuteNonQuery();
+
+///////////////////////////////
+///	Server setup
+///////////////////////////////
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<PageManager<Project>>();
@@ -46,6 +55,10 @@ if(!Directory.Exists(path))
 	Directory.CreateDirectory(path);
 }
 
+///////////////////////////////
+///	Endpoints
+///////////////////////////////
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -57,43 +70,14 @@ app.UseStaticFiles(new StaticFileOptions
 		});
 app.UseWebSockets();
 
-app.MapGet("/projects", (HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => {
+app.MapGet("/projects", () => {
+		return Results.File("projects.html", "text/html");
+});
+
+app.MapGet("/projects/list", (HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => {
 		var projects = ProjectHandler.Handle(c, cToken, mgr);
-		var html = @"<!DOCTYPE html>
-		<html lang=""en"">
-		<head>
-		<meta charset=""UTF-8"">
-		<title>Projects</title>
-		<link rel=""stylesheet"" href=""/css/project.css"">
-			</head>
-			<body>
-			<div class=""container"">
-			<h1>Projects</h1>
-			";
-
-
-		foreach (var p in projects)
-		{
-			html += @$"
-				<div class=""project"">
-				<div class=""header"">
-				<a href=""{p.path}/"">
-				<h3>{Path.GetFileName(p.name)}</h3>
-				</a>
-				</div>
-				<div class=""details"">
-				<div>Tile size: {p.TileWid} × {p.TileHei} px</div>
-				<div>Project size: {p.Wid} × {p.Hei} tiles</div>
-				<div>Created: {p.CreationDate}</div>
-				</div>
-				</div>
-				";
-		}
-
-		html += @"</div>
-			</body>
-			</html>";
-		return Results.Content(html, "text/html");
+		var json = JsonSerializer.Serialize(projects);
+		return Results.Content(json, "application/json");
 		});
 
 app.MapGet("/projects/new", () => {
@@ -163,8 +147,5 @@ app.MapGet("/projects/{hash}/export", (string hash, HttpContext c, PageManager<P
 				"application/octet-stream",
 				fileDownloadName: $"{p.ProjectName}_canvas.bin");
 	});
-
-// TODO(garipew): To share palettes across projects,
-// add /palettes and /palettes/new endpoint.
 
 app.Run();
