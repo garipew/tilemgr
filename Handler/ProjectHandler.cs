@@ -48,13 +48,8 @@ public static class ProjectHandler
 					CancellationToken.None);
 		}
 	}
-	public static List<ProjectView> Handle(HttpContext c, CancellationToken cToken, PageManager<Project> mgr)
-	{
-		var projects = Project.Load();
-		return projects;
-	}
 
-	public static async Task Handle(string hash, HttpContext c, CancellationToken cToken, PageManager<Project> mgr)
+	public static async Task Handle(string hash, HttpContext c, CancellationToken cToken, PageManager mgr)
 	{
 		var page = mgr.GetOrCreate(hash);
 		if(page.Data == null)
@@ -70,7 +65,7 @@ public static class ProjectHandler
 		}
 
 		var client = new Client(await c.WebSockets.AcceptWebSocketAsync());
-		page.Connect(client);
+		mgr.Connect(page, client);
 		var greetings = JsonSerializer.SerializeToUtf8Bytes(project.GetView(compress: true));
 		await client.ws.SendAsync(greetings,
 				WebSocketMessageType.Text,
@@ -121,11 +116,6 @@ public static class ProjectHandler
 			var result = JsonSerializer.SerializeToUtf8Bytes(result_msg);
 			await BroadcastMessage(result, page.Clients);
 		}
-		page.Disconnect(client);
-		if(page.IsEmpty)
-		{
-			Project.Save(project);
-			mgr.TryRemove(hash, out page);
-		}
+		mgr.Disconnect(page, client);
 	}
 }
