@@ -1,68 +1,19 @@
 using System;
 using System.IO;
 using System.Text;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Tilemgr;
 
-public class Canvas : ILoadable<Canvas>
+[Owned]
+public class Canvas
 {
-	public byte[,] DrawableLayer;
-	public readonly string Name;
-
-	public Canvas(string name, int wid, int hei)
-	{
-		this.DrawableLayer = new byte[hei,wid];
-		this.Name = name;
-	}
-
-	public Canvas(int wid, int hei, string name)
-	{
-		this.DrawableLayer = new byte[hei,wid];
-		this.Name = name;
-	}
-
-	public Canvas(byte[,] drawable, string name)
-	{
-		this.DrawableLayer = drawable;
-		this.Name = name;
-	}
-
-
-	public bool IsEqual(Object? obj)
-	{
-		if(obj == null || !(obj is Canvas))
-		{
-			return false;
-		}
-		Canvas b = (Canvas)obj;
-		var wid = this.DrawableLayer.GetLength(1);
-		var hei = this.DrawableLayer.GetLength(0);
-		if(b.DrawableLayer.GetLength(0) != hei || b.DrawableLayer.GetLength(1) != wid)
-		{
-			return false;
-		}
-		for(int i = 0; i < hei; i++)
-		{
-			for(int j = 0; j < wid; j++)
-			{
-				if(this.DrawableLayer[i, j] != b.DrawableLayer[i, j])
-				{
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	public static Canvas? Load(Context c)
-	{
-		if(!File.Exists(c.lookup))
-		{
-			return null;
-		}
-		byte[] compressed = File.ReadAllBytes(c.lookup);
-		return new Canvas(decompress(compressed), c.lookup);
-	}
+	public string Name { get; set; }
+	public byte[] Compressed { get; set; }
+	[NotMapped]
+	public byte[,] DrawableLayer { get; set; }
 
 	public int GetLength(byte[] compressed)
 	{
@@ -90,25 +41,27 @@ public class Canvas : ILoadable<Canvas>
 		}
 	}
 
-	public static Context Save(Canvas obj)
-	{
-		var compressed = Canvas.compress(obj.DrawableLayer);
-		obj.Export(obj.Name);
-		return new Context(obj.Name);
-	}
-
 	public int GetHeight()
 	{
+		if(this.DrawableLayer == null) {
+			this.DrawableLayer = Canvas.decompress(this.Compressed);
+		}
 		return this.DrawableLayer.GetLength(0);
 	}
 
 	public byte GetTile(int x, int y)
 	{
+		if(this.DrawableLayer == null) {
+			this.DrawableLayer = Canvas.decompress(this.Compressed);
+		}
 		return this.DrawableLayer[y, x];
 	}
 
 	public int GetWidth()
 	{
+		if(this.DrawableLayer == null) {
+			this.DrawableLayer = Canvas.decompress(this.Compressed);
+		}
 		return this.DrawableLayer.GetLength(1);
 	}
 
@@ -191,6 +144,9 @@ public class Canvas : ILoadable<Canvas>
 
 	public byte[] compress()
 	{
+		if(this.DrawableLayer == null) {
+			this.DrawableLayer = Canvas.decompress(this.Compressed);
+		}
 		return compress(this.DrawableLayer);
 	}
 }

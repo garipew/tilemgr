@@ -1,41 +1,34 @@
 using System.IO;
 using System.Buffers.Binary;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Tilemgr;
 
 public record PaletteView(string ImgPath, List<FrameView> frames);
 
-public class Palette : ILoadable<Palette>
+[Owned]
+public class Palette
 {
-	public readonly string ImgPath;
-	public int TileWid;
-	public int TileHei;
-	public Frame[]? frames;
+	public string ImgPath { get; set; }
+	public int TileWid { get; set; }
+	public int TileHei { get; set; }
 
-	public Palette(string ImgPath, int TileWid, int TileHei)
-	{
-		this.ImgPath = ImgPath;
-		this.TileWid = TileWid;
-		this.TileHei = TileHei;
-		this.frames = load_frames(ImgPath);
-	}
-
-	public static Palette? Load(Context c)
-	{
-		if(!File.Exists(c.lookup) || c.TileWid == null || c.TileHei == null)
+	private bool loaded;
+	private Frame[]? _frames;
+	[NotMapped]
+	public Frame[]? frames {
+		get
 		{
-			return null;
+			if(!loaded) {
+				_frames = load_frames(this.ImgPath);
+				loaded = true;
+			}
+			return _frames;
 		}
-		return new Palette(c.lookup, c.TileWid.Value, c.TileHei.Value);
 	}
 
-	public static Context Save(Palette obj)
-	{
-		// TODO(garipew): To share tilesheet across projects,
-		// save TileWid, TileHei and ImgPath to a new table,
-		// "Palettes".
-		return new Context(obj.ImgPath, obj.TileWid, obj.TileHei);
-	}
 
 	public PaletteView GetView()
 	{
