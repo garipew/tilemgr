@@ -2,41 +2,24 @@ using System;
 using System.Text.Json;
 using System.Net.WebSockets;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
 using Pagemgr;
 using Tilemgr;
 using Handler;
-
-///////////////////////////////
-///	DB setup
-///////////////////////////////
-
-using var conn = new SqliteConnection("Data Source=data.db");
-conn.Open();
-
-using var create = conn.CreateCommand();
-// TODO(garipew): Update properties of columns,
-// varchar -> TEXT,
-// Hash should be PRIMARY,
-// Name should be UNIQUE (this would also result on Paths being unique, since
-// they are created using name).
-create.CommandText = @" CREATE TABLE IF NOT EXISTS Projects (
-		Hash varchar(255),
-		CanvasPath varchar(255),
-		PalettePath varchar(255),
-		TileWid int,
-		TileHei int,
-		CreationDate datetime DEFAULT CURRENT_TIMESTAMP,
-		ProjectName varchar(255))";
-create.ExecuteNonQuery();
+using Data;
 
 ///////////////////////////////
 ///	Server setup
 ///////////////////////////////
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton<PageManager<Project>>();
+builder.Services.AddDbContextFactory<ProjectContext>(options =>
+	{
+		options.UseSqlite("Data Source=projects.db");
+	});
+builder.Services.AddSingleton<PageManager>();
 
 var app = builder.Build();
 
@@ -74,9 +57,21 @@ app.MapGet("/projects", () => {
 		return Results.File("projects.html", "text/html");
 });
 
-app.MapGet("/projects/list", (HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => {
-		var projects = ProjectHandler.Handle(c, cToken, mgr);
-		var json = JsonSerializer.Serialize(projects);
+app.MapGet("/projects/list", (HttpContext c, CancellationToken cToken, PageManager mgr) => {
+		using var ctx = new ProjectContext();
+		List<Project> projs = ctx.Projects.AsEnumerable().ToList();
+		var views = new List<ProjectView>();
+		foreach(var page in mgr.Pages) {
+			if(page.Data == null) {
+				continue;
+			}
+			projs.Add(page.Data);
+		}
+
+		foreach(var p in projs) {
+			views.Add(p.GetView());
+		}
+		var json = JsonSerializer.Serialize(views);
 		return Results.Content(json, "application/json");
 		});
 
@@ -84,7 +79,7 @@ app.MapGet("/projects/new", () => {
 		return Results.File("new_project.html", "text/html");
 });
 
-app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mgr) =>
+app.MapPost("/projects/new", async (HttpRequest request, PageManager mgr) =>
 	{
 		var form = await request.ReadFormAsync();
 
@@ -99,22 +94,33 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager<Project> mg
 		using var stream = new FileStream(palette_path, FileMode.Create);
 		await image.CopyToAsync(stream);
 
-		var palette = new Palette(palette_path,
-				int.Parse(form["t_wid"].ToString()),
-				int.Parse(form["t_hei"].ToString()));
+		var palette = new Palette();
+		palette.ImgPath = palette_path;
+		palette.TileWid = int.Parse(form["t_wid"].ToString());
+		palette.TileHei = int.Parse(form["t_hei"].ToString());
 
 		root = Path.Combine("uploads", "canvas");
-		var canvas = new Canvas(Path.Combine(root, $"{name}_canvas.bin"),
-				int.Parse(form["wid"].ToString()),
-				int.Parse(form["hei"].ToString()));
+		var canvas = new Canvas();
+		canvas.Name = Path.Combine(root, $"{name}_canvas.bin");
+		canvas.DrawableLayer = new byte[int.Parse(form["wid"].ToString()), int.Parse(form["hei"].ToString())];
 
-		var p = new Project(canvas, name, palette);
-		var p_context = Project.Save(p);
+		var p = new Project();
+		p.canvas = canvas;
+		p.ProjectName = name;
+		p.palette = palette;
+		p.CreationDate = DateTime.Now;
+		p.Hash = Project.ComputeHash(p);
 
-		return Results.Redirect($"/projects/{p_context.lookup}/");
+		var page = new Page(p, p.Hash);
+		if(!mgr.TryAdd(p.Hash, page)) {
+			// TODO(garipew): Solve hash conflict
+			return Results.Content("Conflict", "text/html");
+		}
+
+		return Results.Redirect($"/projects/{p.Hash}/");
 	});
 
-app.MapGet("/projects/{hash}/", (string hash, PageManager<Project> mgr) => {
+app.MapGet("/projects/{hash}/", (string hash, PageManager mgr) => {
 		var page = mgr.GetOrCreate(hash);
 		if(page.Data == null)
 		{
@@ -124,28 +130,31 @@ app.MapGet("/projects/{hash}/", (string hash, PageManager<Project> mgr) => {
 		}
 );
 
-app.MapGet("/projects/{hash}/ws", async (string hash, HttpContext c, CancellationToken cToken, PageManager<Project> mgr) => await ProjectHandler.Handle(hash, c, cToken, mgr));
+app.MapGet("/projects/{hash}/ws", async (string hash, HttpContext c, CancellationToken cToken, PageManager mgr) => await ProjectHandler.Handle(hash, c, cToken, mgr));
 
-app.MapGet("/projects/{hash}/export", (string hash, HttpContext c, PageManager<Project> mgr) =>
+app.MapGet("/projects/{hash}/export", (string hash, HttpContext c, PageManager mgr) =>
 	{
-		Page<Project>? page = null;
-		Project? p = null;
+		Page? page = null;
 		mgr.TryGet(hash, out page);
-		if(page != null)
-		{
-			p = page.Data; // <- This is recoverable, project could exist on db
+		Project? proj = null;
+		if(page != null) {
+			proj = page.Data;
 		}
 
-		p ??= Project.Load(new Context(hash)); // <- This is unrecoverable.
-		if(p == null)
+		if(proj == null) {
+			using var ctx = new ProjectContext();
+			proj = ctx.Projects.Where(p => p.Hash == hash).FirstOrDefault();
+		}
+
+		if(proj == null)
 		{
 			return Results.NotFound($"Project {hash} does not exist.");
 		}
-		Canvas.Save(p.canvas);
-		var stream = File.OpenRead(p.canvas.Name);
-		return Results.File(stream,
+
+		var stream = File.OpenRead(proj.canvas.Name);
+		return Results.File(proj.canvas.compress(),
 				"application/octet-stream",
-				fileDownloadName: $"{p.ProjectName}_canvas.bin");
+				fileDownloadName: $"{proj.ProjectName}_canvas.bin");
 	});
 
 app.Run();
