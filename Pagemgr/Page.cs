@@ -1,19 +1,23 @@
 using System.Net.WebSockets;
 using System.Collections.Concurrent;
 
+using Tilemgr;
+
 namespace Pagemgr;
 
-public class Page<T>
+public class Page
 {
-	public T? Data;
+	public Project? Data;
+	public readonly string Hash;
 	private readonly ConcurrentDictionary<Guid, Client> _clients = new();
 
 	public IEnumerable<Client> Clients => _clients.Values;
 	public bool IsEmpty => _clients.IsEmpty;
 
-	public Page(T? data)
+	public Page(Project? data, string hash)
 	{
 		Data = data;
+		Hash = hash;
 	}
 
 	public bool Connect(Client c)
