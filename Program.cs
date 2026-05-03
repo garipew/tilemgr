@@ -58,19 +58,11 @@ app.MapGet("/projects", () => {
 });
 
 app.MapGet("/projects/list", (HttpContext c, CancellationToken cToken, PageManager mgr) => {
+		List<Project> projs = mgr.Pages.Select(p => p.Data).Where(d => d != null).ToList();
+		var hashes = projs.Select(p => p.Hash).ToHashSet();
 		using var ctx = new ProjectContext();
-		List<Project> projs = ctx.Projects.AsEnumerable().ToList();
-		var views = new List<ProjectView>();
-		foreach(var page in mgr.Pages) {
-			if(page.Data == null) {
-				continue;
-			}
-			projs.Add(page.Data);
-		}
-
-		foreach(var p in projs) {
-			views.Add(p.GetView());
-		}
+		projs.AddRange(ctx.Projects.Where(p => !hashes.Contains(p.Hash)));
+		var views = projs.Select(p => p.GetView());
 		var json = JsonSerializer.Serialize(views);
 		return Results.Content(json, "application/json");
 		});
