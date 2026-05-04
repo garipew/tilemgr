@@ -15,9 +15,13 @@ using Data;
 ///////////////////////////////
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContextFactory<ProjectContext>(options =>
+
+builder.Services.AddDbContextPool<ProjectContext>(opt =>
+		opt.UseSqlite(builder.Configuration.GetConnectionString("ProjectContext")));
+
+builder.Services.AddDbContextFactory<ProjectContext>(opt =>
 	{
-		options.UseSqlite("Data Source=projects.db");
+		opt.UseSqlite(builder.Configuration.GetConnectionString("ProjectContext"));
 	});
 builder.Services.AddSingleton<PageManager>();
 
@@ -57,10 +61,9 @@ app.MapGet("/projects", () => {
 		return Results.File("projects.html", "text/html");
 });
 
-app.MapGet("/projects/list", (HttpContext c, CancellationToken cToken, PageManager mgr) => {
+app.MapGet("/projects/list", (PageManager mgr, ProjectContext ctx) => {
 		List<Project> projs = mgr.Pages.Select(p => p.Data).Where(d => d != null).ToList();
 		var hashes = projs.Select(p => p.Hash).ToHashSet();
-		using var ctx = new ProjectContext();
 		projs.AddRange(ctx.Projects.Where(p => !hashes.Contains(p.Hash)));
 		var views = projs.Select(p => p.GetView());
 		var json = JsonSerializer.Serialize(views);
@@ -124,7 +127,7 @@ app.MapGet("/projects/{hash}/", (string hash, PageManager mgr) => {
 
 app.MapGet("/projects/{hash}/ws", async (string hash, HttpContext c, CancellationToken cToken, PageManager mgr) => await ProjectHandler.Handle(hash, c, cToken, mgr));
 
-app.MapGet("/projects/{hash}/export", (string hash, HttpContext c, PageManager mgr) =>
+app.MapGet("/projects/{hash}/export", (string hash, HttpContext c, PageManager mgr, ProjectContext ctx) =>
 	{
 		Page? page = null;
 		mgr.TryGet(hash, out page);
@@ -134,7 +137,6 @@ app.MapGet("/projects/{hash}/export", (string hash, HttpContext c, PageManager m
 		}
 
 		if(proj == null) {
-			using var ctx = new ProjectContext();
 			proj = ctx.Projects.Where(p => p.Hash == hash).FirstOrDefault();
 		}
 

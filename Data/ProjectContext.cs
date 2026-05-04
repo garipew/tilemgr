@@ -6,16 +6,9 @@ using Tilemgr;
 
 namespace Data;
 
-public class ProjectContext : DbContext
+public class ProjectContext(DbContextOptions<ProjectContext> options) : DbContext(options)
 {
 	public DbSet<Project> Projects { get; set; }
-
-	public string DbPath { get; }
-
-	public ProjectContext()
-	{
-		DbPath = "projects.db";
-	}
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -24,7 +17,6 @@ public class ProjectContext : DbContext
 			e.OwnsOne(p => p.canvas);
 			e.OwnsOne(p => p.palette);
 		});
+		base.OnModelCreating(modelBuilder);
 	}
-
-	protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite($"Data Source={DbPath}");
 }
