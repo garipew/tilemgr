@@ -127,7 +127,7 @@ app.MapGet("/projects/{hash}/", (string hash, PageManager mgr) => {
 
 app.MapGet("/projects/{hash}/ws", async (string hash, HttpContext c, CancellationToken cToken, PageManager mgr) => await ProjectHandler.Handle(hash, c, cToken, mgr));
 
-app.MapGet("/projects/{hash}/export", (string hash, HttpContext c, PageManager mgr, ProjectContext ctx) =>
+app.MapGet("/projects/{hash}/export", (string hash, PageManager mgr, ProjectContext ctx) =>
 	{
 		Page? page = null;
 		mgr.TryGet(hash, out page);
