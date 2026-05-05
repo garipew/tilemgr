@@ -10,7 +10,6 @@ namespace Tilemgr;
 [Owned]
 public class Canvas
 {
-	public string Name { get; set; }
 	public byte[] Compressed { get; set; }
 	[NotMapped]
 	public byte[,] DrawableLayer { get; set; }

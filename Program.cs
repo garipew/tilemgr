@@ -36,11 +36,6 @@ if(!Directory.Exists(path))
 {
 	Directory.CreateDirectory(path);
 }
-path = Path.Combine("uploads", "canvas");
-if(!Directory.Exists(path))
-{
-	Directory.CreateDirectory(path);
-}
 
 ///////////////////////////////
 ///	Endpoints
@@ -96,7 +91,6 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager mgr) =>
 
 		root = Path.Combine("uploads", "canvas");
 		var canvas = new Canvas();
-		canvas.Name = Path.Combine(root, $"{name}_canvas.bin");
 		canvas.DrawableLayer = new byte[int.Parse(form["wid"].ToString()), int.Parse(form["hei"].ToString())];
 
 		var p = new Project();
@@ -145,7 +139,6 @@ app.MapGet("/projects/{hash}/export", (string hash, PageManager mgr, ProjectCont
 			return Results.NotFound($"Project {hash} does not exist.");
 		}
 
-		var stream = File.OpenRead(proj.canvas.Name);
 		return Results.File(proj.canvas.compress(),
 				"application/octet-stream",
 				fileDownloadName: $"{proj.ProjectName}_canvas.bin");
