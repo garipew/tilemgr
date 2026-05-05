@@ -1,7 +1,6 @@
 using System;
 using System.Text.Json;
 using System.Net.WebSockets;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
@@ -17,11 +16,11 @@ using Data;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContextPool<ProjectContext>(opt =>
-		opt.UseSqlite(builder.Configuration.GetConnectionString("ProjectContext")));
+		opt.UseNpgsql(builder.Configuration.GetConnectionString("ProjectContext")));
 
 builder.Services.AddDbContextFactory<ProjectContext>(opt =>
 	{
-		opt.UseSqlite(builder.Configuration.GetConnectionString("ProjectContext"));
+		opt.UseNpgsql(builder.Configuration.GetConnectionString("ProjectContext"));
 	});
 builder.Services.AddSingleton<PageManager>();
 
@@ -97,7 +96,7 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager mgr) =>
 		p.canvas = canvas;
 		p.ProjectName = name;
 		p.palette = palette;
-		p.CreationDate = DateTime.Now;
+		p.CreationDate = DateTime.UtcNow;
 		p.Hash = Project.ComputeHash(p);
 
 		var page = new Page(p, p.Hash);

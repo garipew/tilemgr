@@ -5,37 +5,44 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace tilemgr.Migrations
 {
     [DbContext(typeof(ProjectContext))]
-    [Migration("20260505132313_CanvasCleanup")]
-    partial class CanvasCleanup
+    [Migration("20260505153528_MigratePostgres")]
+    partial class MigratePostgres
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.15");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "9.0.15")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Tilemgr.Project", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreationDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("ProjectName")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -47,11 +54,11 @@ namespace tilemgr.Migrations
                     b.OwnsOne("Tilemgr.Canvas", "canvas", b1 =>
                         {
                             b1.Property<int>("ProjectId")
-                                .HasColumnType("INTEGER");
+                                .HasColumnType("integer");
 
                             b1.Property<byte[]>("Compressed")
                                 .IsRequired()
-                                .HasColumnType("BLOB");
+                                .HasColumnType("bytea");
 
                             b1.HasKey("ProjectId");
 
@@ -64,17 +71,17 @@ namespace tilemgr.Migrations
                     b.OwnsOne("Tilemgr.Palette", "palette", b1 =>
                         {
                             b1.Property<int>("ProjectId")
-                                .HasColumnType("INTEGER");
+                                .HasColumnType("integer");
 
                             b1.Property<string>("ImgPath")
                                 .IsRequired()
-                                .HasColumnType("TEXT");
+                                .HasColumnType("text");
 
                             b1.Property<int>("TileHei")
-                                .HasColumnType("INTEGER");
+                                .HasColumnType("integer");
 
                             b1.Property<int>("TileWid")
-                                .HasColumnType("INTEGER");
+                                .HasColumnType("integer");
 
                             b1.HasKey("ProjectId");
 
