@@ -17,7 +17,7 @@ The app leverages the following technologies:
 - C#, .NET Core, ASP.NET Core
 - EntityFramework Core (EF Core), LINQ
 - WebSockets
-- Sqlite
+- PostgreSQL
 
 ## Getting started
 
