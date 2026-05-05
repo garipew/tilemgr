@@ -45,7 +45,6 @@ The format was designed with the full cycle of the tool in mind. An editor is on
 
 - [ ] Capture sigint and close connections, also saves projects 
 - [ ] Check for name collision with existing project on creation, refuse name or resolve conflict?
-- [ ] Update DB to PostgreSQL 
 
 ### Front-end
 
@@ -55,8 +54,6 @@ The format was designed with the full cycle of the tool in mind. An editor is on
 ### Both
 
 - [ ] Display cursor position of users on tilemap
-- [ ] Add authentication
-- [ ] Add owners to projects 
 
 ### Other
 
@@ -76,6 +73,7 @@ The format was designed with the full cycle of the tool in mind. An editor is on
 - Modularize editor.js ([commit](https://github.com/garipew/tilemgr/commit/aaec265177cd5f4dbe04d652bfce45b422ef7fa8))
 - Update README, add roadmap([commit](https://github.com/garipew/tilemgr/commit/a57ce6344bc38e938586274174cac7b384e8654e))
 - Add EF Core ([commit](https://github.com/garipew/tilemgr/commit/4112eb6584e408a50b6049bdb7f4408d190e938c))
+- Update DB to PostgreSQL ([commit](https://github.com/garipew/tilemgr/commit/4b2d43e831ae45f7d0ee53d47aa98512dee00bdb))
 
 ## Contributing
 
