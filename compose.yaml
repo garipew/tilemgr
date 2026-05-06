@@ -7,19 +7,20 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-tilemgr}
       POSTGRES_DB: tilemgr
 
-  migrate:
-    build: .
-    depends_on:
-      - db
-    entrypoint: ["sh", "-c", "until dotnet ef database update; do sleep 2; done"]
-    environment:
-      ConnectionStrings__ProjectContext: Host=db;Database=tilemgr;Username=${DB_USER:-tilemgr};Password=${DB_PASSWORD:-tilemgr}
-
   tilemgr:
     build: .
+    image: tilemgr:latest
     depends_on:
       - db
     ports:
       - "5273:5273"
+    environment:
+      ConnectionStrings__ProjectContext: Host=db;Database=tilemgr;Username=${DB_USER:-tilemgr};Password=${DB_PASSWORD:-tilemgr}
+
+  migrate:
+    image: tilemgr:latest
+    depends_on:
+      - db
+    entrypoint: ["sh", "-c", "until dotnet ef database update; do sleep 2; done"]
     environment:
       ConnectionStrings__ProjectContext: Host=db;Database=tilemgr;Username=${DB_USER:-tilemgr};Password=${DB_PASSWORD:-tilemgr}
