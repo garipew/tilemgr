@@ -18,18 +18,30 @@ The app leverages the following technologies:
 - EntityFramework Core (EF Core), LINQ
 - WebSockets
 - PostgreSQL
+- Docker
 
 ## Getting started
-
-Requires the .NET 9 SDK.
-
-```bash
+### 1. Clone the repo
+```
 git clone https://github.com/garipew/tilemgr
 cd tilemgr
+```
+
+### 2. Run it with Docker (Recommended)
+Make sure you have Docker installed, then run:
+```bash
+docker compose up
+```
+
+### 3. Run it locally (Without Docker)
+Ensure you have the .NET 9.0 SDK installed and your database is properly configured.
+```
+dotnet restore
+dotnet ef database update
 dotnet run
 ```
 
-Then open `http://localhost:5273` in your browser.
+Then open the application on `http://localhost:5273` in your browser.
 
 ## Export format
 
@@ -50,6 +62,16 @@ The format was designed with the full cycle of the tool in mind. An editor is on
 
 - [ ] Display cursor position of users on tilemap
 
+## Contributing
+
+Issues and pull requests are welcomed.
+
+## License
+
+This project is licensed under MIT license.
+
+---
+
 ## Changelog
 
 - Save on DB and unload project when last user disconnects ([commit](https://github.com/garipew/tilemgr/commit/0ec71553d0bc15f3630131291b981f36cdacfffe))
@@ -66,11 +88,3 @@ The format was designed with the full cycle of the tool in mind. An editor is on
 - Add EF Core ([commit](https://github.com/garipew/tilemgr/commit/4112eb6584e408a50b6049bdb7f4408d190e938c))
 - Update DB to PostgreSQL ([commit](https://github.com/garipew/tilemgr/commit/4b2d43e831ae45f7d0ee53d47aa98512dee00bdb))
 - Add Dockerfile and compose.yaml ([commit](https://github.com/garipew/tilemgr/commit/94a4708f15ea1cbb795ab2bf087a6a105676b608))
-
-## Contributing
-
-Issues and pull requests are welcomed.
-
-## License
-
-This project is licensed under MIT license.
