@@ -41,23 +41,14 @@ Tilemgr allows users to export projects to a custom binary format at any time. T
 The format was designed with the full cycle of the tool in mind. An editor is only useful if you can consume its output.
 
 ## Roadmap
-### Back-end
-
-- [ ] Capture sigint and close connections, also saves projects 
-- [ ] Check for name collision with existing project on creation, refuse name or resolve conflict?
-
 ### Front-end
 
 - [ ] Improve UI on tile picker, highlight selected tile
 - [ ] Add navigation on tilemap viewport
 
-### Both
+### Extra
 
 - [ ] Display cursor position of users on tilemap
-
-### Other
-
-- [ ] Add docker image
 
 ## Changelog
 
@@ -74,6 +65,7 @@ The format was designed with the full cycle of the tool in mind. An editor is on
 - Update README, add roadmap([commit](https://github.com/garipew/tilemgr/commit/a57ce6344bc38e938586274174cac7b384e8654e))
 - Add EF Core ([commit](https://github.com/garipew/tilemgr/commit/4112eb6584e408a50b6049bdb7f4408d190e938c))
 - Update DB to PostgreSQL ([commit](https://github.com/garipew/tilemgr/commit/4b2d43e831ae45f7d0ee53d47aa98512dee00bdb))
+- Add Dockerfile and compose.yaml ([commit](https://github.com/garipew/tilemgr/commit/94a4708f15ea1cbb795ab2bf087a6a105676b608))
 
 ## Contributing
 
