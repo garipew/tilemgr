@@ -55,7 +55,6 @@ The format was designed with the full cycle of the tool in mind. An editor is on
 ## Roadmap
 ### Front-end
 
-- [ ] Improve UI on tile picker, highlight selected tile
 - [ ] Add navigation on tilemap viewport
 
 ### Extra

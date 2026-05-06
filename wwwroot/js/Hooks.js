@@ -42,6 +42,8 @@ palette.addEventListener("mousedown", (e) => {
 			return;
 		}
 		palette_canvas.tile_selected = idx + 1;
+		palette_canvas.clear();
+		palette_canvas.draw();
 	}
 })
 
