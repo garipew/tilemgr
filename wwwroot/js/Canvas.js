@@ -67,33 +67,6 @@ class Canvas {
 		this.ctx.canvas.height = Canvas.hei * this.view.rows;
 	}
 
-	gen_selectormap(tilecount) {
-		this.view = new Viewport(4, 10);
-
-		const cols = 4;
-		this.map = [];
-		let tmp = [];
-		for(let i = 1; i < tilecount; i++) {
-			tmp.push(i);
-			if(tmp.length == cols) {
-				this.map.push(tmp);
-				tmp = [];
-			}
-		}
-
-		if(tmp.length > 0) {
-			for(let i = tmp.length; i < cols; i++){
-				tmp.push(0);
-			}
-			this.map.push(tmp);
-		}
-		this.cols = cols;
-		this.rows = this.map.length;
-
-		this.ctx.canvas.width = Canvas.wid * this.view.cols;
-		this.ctx.canvas.height = Canvas.hei * this.view.rows;
-	}
-
 	static load_atlas(msg) {
 		Canvas.frames = msg.frames.slice()
 		Canvas.atlas.src = "/" + msg.ImgPath

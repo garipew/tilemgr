@@ -24,4 +24,31 @@ class Palette extends Canvas {
 		this.ctx.strokeStyle = "#ff0000";
 		this.ctx.strokeRect(x_pos, y_pos, Canvas.wid, Canvas.hei);
 	}
+
+	gen_selectormap(tilecount) {
+		this.view = new Viewport(4, 10);
+
+		const cols = 4;
+		this.map = [];
+		let tmp = [];
+		for(let i = 1; i < tilecount; i++) {
+			tmp.push(i);
+			if(tmp.length == cols) {
+				this.map.push(tmp);
+				tmp = [];
+			}
+		}
+
+		if(tmp.length > 0) {
+			for(let i = tmp.length; i < cols; i++){
+				tmp.push(0);
+			}
+			this.map.push(tmp);
+		}
+		this.cols = cols;
+		this.rows = this.map.length;
+
+		this.ctx.canvas.width = Canvas.wid * this.view.cols;
+		this.ctx.canvas.height = Canvas.hei * this.view.rows;
+	}
 }
