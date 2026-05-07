@@ -41,16 +41,16 @@ viewport.addEventListener("mousemove", (e) => {
 
 		if(tilemap_canvas.view.x < 0) {
 			tilemap_canvas.view.x = 0;
-		} else if(tilemap_canvas.view.x + tilemap_canvas.view.cols >= tilemap_canvas.cols) {
-			tilemap_canvas.view.x = tilemap_canvas.cols - tilemap_canvas.view.cols;
+		} else if(tilemap_canvas.view.x >= tilemap_canvas.cols) {
+			tilemap_canvas.view.x = tilemap_canvas.view.cols - 1;
 		}
 
 		tilemap_canvas.view.y -= mouse_pos.y - mouse.grab.y;
 
 		if(tilemap_canvas.view.y < 0) {
 			tilemap_canvas.view.y = 0;
-		} else if(tilemap_canvas.view.y + tilemap_canvas.view.rows >= tilemap_canvas.rows) {
-			tilemap_canvas.view.y = tilemap_canvas.rows - tilemap_canvas.view.rows;
+		} else if(tilemap_canvas.view.y >= tilemap_canvas.rows) {
+			tilemap_canvas.view.y = tilemap_canvas.view.rows - 1;
 		}
 		tilemap_canvas.clear();
 		tilemap_canvas.draw();

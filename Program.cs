@@ -101,7 +101,6 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager mgr) =>
 
 		var page = new Page(p, p.Hash);
 		if(!mgr.TryAdd(p.Hash, page)) {
-			// TODO(garipew): Solve hash conflict
 			return Results.Content("Conflict", "text/html");
 		}
 
