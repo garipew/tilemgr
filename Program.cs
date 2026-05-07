@@ -56,7 +56,7 @@ app.MapGet("/projects", () => {
 });
 
 app.MapGet("/projects/list", (PageManager mgr, ProjectContext ctx) => {
-		List<Project> projs = mgr.Pages.Select(p => p.Data).Where(d => d != null).ToList();
+		List<Project> projs = mgr.Pages.Select(p => p.Data).OfType<Project>().ToList();
 		var hashes = projs.Select(p => p.Hash).ToHashSet();
 		projs.AddRange(ctx.Projects.Where(p => !hashes.Contains(p.Hash)));
 		var views = projs.Select(p => p.GetView());

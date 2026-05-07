@@ -10,9 +10,9 @@ namespace Tilemgr;
 [Owned]
 public class Canvas
 {
-	public byte[] Compressed { get; set; }
+	public byte[] Compressed { get; set; } = null!;
 	[NotMapped]
-	public byte[,] DrawableLayer { get; set; }
+	public byte[,] DrawableLayer { get; set; } = null!;
 
 	public int GetLength(byte[] compressed)
 	{

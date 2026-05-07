@@ -11,7 +11,7 @@ public record PaletteView(string ImgPath, List<FrameView> frames);
 [Owned]
 public class Palette
 {
-	public string ImgPath { get; set; }
+	public string ImgPath { get; set; } = null!;
 	public int TileWid { get; set; }
 	public int TileHei { get; set; }
 
@@ -28,7 +28,6 @@ public class Palette
 			return _frames;
 		}
 	}
-
 
 	public PaletteView GetView()
 	{

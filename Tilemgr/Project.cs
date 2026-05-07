@@ -10,11 +10,11 @@ public record ProjectView(int TileWid, int TileHei, int Wid, int Hei, string nam
 public class Project
 {
 	public int Id { get; set; }
-	public string Hash { get; set; }
-	public Canvas canvas { get; set; }
-	public Palette palette { get; set; }
+	public string Hash { get; set; } = null!;
+	public Canvas canvas { get; set; } = null!;
+	public Palette palette { get; set; } = null!;
 	public DateTime CreationDate { get; set; }
-	public string ProjectName { get; set; }
+	public string ProjectName { get; set; } = null!;
 
 	static private string HexToString(byte[] input)
 	{
