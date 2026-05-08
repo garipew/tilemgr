@@ -82,7 +82,7 @@ class Canvas {
 		if(y < 0 || y >= this.rows) {
 			return;
 		}
-		if(tile < 0 || tile >= Canvas.frames.length) {
+		if(tile < 0 || tile > Canvas.frames.length) {
 			return;
 		}
 		this.map[y][x] = tile;
@@ -106,7 +106,7 @@ class Canvas {
 			for(let j = start_col; j < end_col; j++) {
 				const x_pos = (j - this.view.x) * Canvas.wid;
 				const tile = this.map[i][j];
-				if(tile == 0 || tile >= Canvas.frames.length) {
+				if(tile == 0 || tile > Canvas.frames.length) {
 					continue;
 				}
 				this.ctx.drawImage(
