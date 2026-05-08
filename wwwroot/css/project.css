@@ -18,6 +18,16 @@ body {
 	color: var(--text);
 }
 
+button {
+	background: var(--accent);
+	padding: 5px 20px;
+	border-radius: 6px;
+}
+
+button:hover {
+	cursor: pointer;
+}
+
 .container {
 	max-width: 900px;
 	margin: 40px auto;
@@ -48,6 +58,10 @@ h1 {
 
 .header {
 	margin-bottom: 8px;
+	flex: 1;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
 }
 
 .header h3 {

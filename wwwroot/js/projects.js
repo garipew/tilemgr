@@ -1,4 +1,5 @@
-// Get project list
+let total = 0;
+
 async function getProjectList() {
 	const response = await fetch("/projects/list");
 
@@ -9,17 +10,46 @@ async function getProjectList() {
 	return await response.json();
 }
 
+async function requestDelete(path) {
+	const response = await fetch(path, { method: 'DELETE', });
+
+	if(response.ok) {
+		const deletedProjectDiv = document.getElementById(path);
+		deletedProjectDiv.remove();
+		total--;
+		displayEmpty();
+	}
+}
+
+function displayEmpty() {
+	if(total == 0) {
+		const emptyDiv = document.createElement("div");
+		emptyDiv.innerHTML = `<p>No project created yet.</p>
+
+				<a href=\"/projects/new\">Click here to create one</a>`;
+		container.appendChild(emptyDiv);
+	}
+}
+
 getProjectList().then(list => {
+	total = list.length;
+	displayEmpty();
 	for(const p of list) {
 		const creationDate = new Date(p.CreationDate);
 
 		const projectDiv = document.createElement("div");
+		projectDiv.id = `${p.path}`
 		projectDiv.classList.add("project");
 
 		const headerDiv = document.createElement("div");
-		headerDiv.innerHTML = `	<a href=\"${p.path}/\">
-						<h3>${p.name}</h3>
-					</a>`;
+		headerDiv.innerHTML = `	<div>
+						<a href=\"${p.path}/\">
+							<h3>${p.name}</h3>
+						</a>
+					</div>
+					<div>
+						<button onClick=\"requestDelete('${p.path}')\">Delete</button>
+					</div>`;
 		headerDiv.classList.add("header");
 
 		const detailsDiv = document.createElement("div");

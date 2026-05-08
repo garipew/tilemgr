@@ -107,6 +107,17 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager mgr) =>
 		return Results.Redirect($"/projects/{p.Hash}/");
 	});
 
+app.MapDelete("/projects/{hash}", (string hash, PageManager mgr, ProjectContext ctx) => {
+		Page? page;
+		mgr.TryRemove(hash, out page);
+		var proj = ctx.Projects.Where(p => p.Hash == hash).FirstOrDefault();
+		if(proj != null) {
+			ctx.Projects.Remove(proj);
+			ctx.SaveChanges();
+		}
+		return Results.Ok();
+	});
+
 app.MapGet("/projects/{hash}/", (string hash, PageManager mgr) => {
 		var page = mgr.GetOrCreate(hash);
 		if(page.Data == null)
