@@ -1,9 +1,6 @@
-@import "/css/colors.css";
+@import "/css/shared.css";
 
 body {
-	margin: 0;
-	background: var(--bg);
-	color: var(--text);
 	height: 100vh;
 	display: flex;
 	justify-content: center;
@@ -11,9 +8,6 @@ body {
 }
 
 .card {
-	background: var(--fg);
-	border: 1px solid var(--primary);
-	border-radius: 6px;
 	padding: 24px;
 	min-width: 260px;
 	text-align: center;
@@ -24,19 +18,6 @@ h1 {
 	font-size: 20px;
 }
 
-a {
+.btn {
 	display: block;
-	margin: 8px 0;
-	padding: 8px;
-	background: #000;
-	border: 1px solid var(--primary);
-	border-radius: 4px;
-	color: var(--secondary);
-	text-decoration: none;
-	font-weight: 600;
 }
-
-a:hover {
-	background: var(--primary);
-}
-

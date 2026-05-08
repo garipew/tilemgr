@@ -1,22 +1,9 @@
-@import "/css/colors.css";
+@import "/css/shared.css";
 
 html, body{
 	height: 100%;
 	margin: 0;
 	overflow: hidden;
-}
-
-a {
-	color: var(--secondary);
-}
-
-a:hover {
-	color: var(--text);
-}
-
-body {
-	display: flex;
-	flex-direction: column;
 }
 
 header, footer {
@@ -25,21 +12,6 @@ header, footer {
 
 header {
 	padding: 10px 0px;
-}
-
-header a {
-	background: var(--secondary);
-	color: var(--bg);
-	text-decoration: none;
-	padding: 5px 20px;
-	border-radius: 4px;
-	margin: 12px;
-	transition: .3s background;
-}
-
-header a:hover {
-	background: var(--bg);
-	color: var(--secondary);
 }
 
 main {
@@ -69,8 +41,6 @@ main {
 	flex: 1;
 	border: 10px solid var(--primary);
 	width: 256px;
-	display: flex;
-	flex-direction: column;
 }
 
 canvas {

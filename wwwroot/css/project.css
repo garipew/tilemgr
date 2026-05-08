@@ -1,21 +1,4 @@
-@import "/css/colors.css";
-
-body {
-	margin: 0;
-	background: var(--bg);
-	color: var(--text);
-}
-
-button {
-	background: var(--secondary);
-	color: var(--primary);
-	padding: 5px 20px;
-	border-radius: 6px;
-}
-
-button:hover {
-	cursor: pointer;
-}
+@import "/css/shared.css";
 
 .container {
 	max-width: 900px;
@@ -30,16 +13,8 @@ h1 {
 }
 
 .project {
-	background: var(--fg);
-	border: 1px solid var(--primary);
-	border-radius: 6px;
 	padding: 14px;
 	margin-bottom: 12px;
-}
-
-.project a {
-	color: var(--secondary);
-	text-decoration: none;
 }
 
 .project a:hover {
@@ -67,4 +42,3 @@ h1 {
 	display: grid;
 	gap: 4px;
 }
-

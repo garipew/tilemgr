@@ -26,7 +26,7 @@ function displayEmpty() {
 		const emptyDiv = document.createElement("div");
 		emptyDiv.innerHTML = `<p>No project created yet.</p>
 
-				<a href=\"/projects/new\">Click here to create one</a>`;
+				<a href=\"/projects/new\" class=\"btn\">Click here to create one</a>`;
 		container.appendChild(emptyDiv);
 	}
 }
@@ -40,6 +40,7 @@ getProjectList().then(list => {
 		const projectDiv = document.createElement("div");
 		projectDiv.id = `${p.path}`
 		projectDiv.classList.add("project");
+		projectDiv.classList.add("card");
 
 		const headerDiv = document.createElement("div");
 		headerDiv.innerHTML = `	<div>
@@ -48,7 +49,7 @@ getProjectList().then(list => {
 						</a>
 					</div>
 					<div>
-						<button onClick=\"requestDelete('${p.path}')\">Delete</button>
+						<button onClick=\"requestDelete('${p.path}')\" class=\"btn\">Delete</button>
 					</div>`;
 		headerDiv.classList.add("header");
 

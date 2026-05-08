@@ -1,0 +1,50 @@
+:root {
+	--bg: #0f0f0f;
+	--fg: #1a1a1a;
+	--text: #e0e0e0;
+	--primary: #2a2a2a;
+	--secondary: #4da6ff;
+}
+
+* {
+	color: var(--text);
+}
+
+body {
+	background: var(--bg);
+	color: var(--text);
+	margin: 0;
+}
+
+a {
+	color: var(--secondary);
+	text-decoration: none;
+}
+
+.card {
+	background: var(--fg);
+	border: 1px solid var(--primary);
+	border-radius: 6px;
+}
+
+.flex {
+	display: flex;
+	flex-direction: column;
+}
+
+.btn {
+	background: var(--secondary);
+	color: var(--bg);
+	padding: 5px 20px;
+	border-radius: 4px;
+	margin: 12px 0;
+	transition: .3s background;
+	border: none;
+	font-weight: 500;
+}
+
+.btn:hover {
+	background: var(--bg);
+	color: var(--secondary);
+	cursor: pointer;
+}
