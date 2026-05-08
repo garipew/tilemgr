@@ -33,7 +33,8 @@ public class PageManager
 			return false;
 		}
 		proj.canvas.DrawableLayer = Canvas.decompress(proj.canvas.Compressed);
-		return _pages.GetOrAdd(hash, new Page(proj, hash));
+		p = _pages.GetOrAdd(hash, new Page(proj, hash));
+		return true;
 	}
 
 	public bool Connect(Page p, Client c)

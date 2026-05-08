@@ -123,9 +123,8 @@ app.MapDelete("/projects/{hash}", (string hash, PageManager mgr, ProjectContext 
 	});
 
 app.MapGet("/projects/{hash}/", (string hash, PageManager mgr) => {
-		var page = mgr.GetOrCreate(hash);
-		if(page.Data == null)
-		{
+		Page? page;
+		if(!mgr.TryGet(hash, out page)) {
 			return Results.NotFound();
 		}
 		return Results.File("editor.html", "text/html");
@@ -137,20 +136,10 @@ app.MapGet("/projects/{hash}/ws", async (string hash, HttpContext c, Cancellatio
 app.MapGet("/projects/{hash}/export", (string hash, PageManager mgr, ProjectContext ctx) =>
 	{
 		Page? page = null;
-		mgr.TryGet(hash, out page);
-		Project? proj = null;
-		if(page != null) {
-			proj = page.Data;
-		}
-
-		if(proj == null) {
-			proj = ctx.Projects.Where(p => p.Hash == hash).FirstOrDefault();
-		}
-
-		if(proj == null)
-		{
+		if(!mgr.TryGet(hash, out page) || page == null) {
 			return Results.NotFound($"Project {hash} does not exist.");
 		}
+		Project proj = page.Data;
 
 		return Results.File(proj.canvas.compress(),
 				"application/octet-stream",

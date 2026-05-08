@@ -51,9 +51,8 @@ public static class ProjectHandler
 
 	public static async Task Handle(string hash, HttpContext c, CancellationToken cToken, PageManager mgr)
 	{
-		var page = mgr.GetOrCreate(hash);
-		if(page.Data == null)
-		{
+		Page? page;
+		if(!mgr.TryGet(hash, out page) || page == null) {
 			c.Response.StatusCode = StatusCodes.Status404NotFound;
 			return;
 		}

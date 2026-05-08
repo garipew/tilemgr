@@ -7,14 +7,14 @@ namespace Pagemgr;
 
 public class Page
 {
-	public Project? Data;
+	public Project Data;
 	public readonly string Hash;
 	private readonly ConcurrentDictionary<Guid, Client> _clients = new();
 
 	public IEnumerable<Client> Clients => _clients.Values;
 	public bool IsEmpty => _clients.IsEmpty;
 
-	public Page(Project? data, string hash)
+	public Page(Project data, string hash)
 	{
 		Data = data;
 		Hash = hash;
