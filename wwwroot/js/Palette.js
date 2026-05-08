@@ -25,26 +25,17 @@ class Palette extends Canvas {
 		this.ctx.strokeRect(x_pos, y_pos, Canvas.wid, Canvas.hei);
 	}
 
-	gen_selectormap(tilecount) {
-		this.view = new Viewport(4, 10);
+	gen_selectormap(count, cols = 4) {
+		this.view = new Viewport(cols, 10);
 
-		const cols = 4;
-		this.map = [];
-		let tmp = [];
-		for(let i = 1; i < tilecount; i++) {
-			tmp.push(i);
-			if(tmp.length == cols) {
-				this.map.push(tmp);
-				tmp = [];
-			}
+		this.map = Array.from( { length: Math.ceil(count / cols) },
+			(_, i) => Array.from( { length: cols },
+				(_, j) =>  i * cols + j + 1));
+
+		if(count % cols > 0) {
+			this.map[this.map.length - 1].splice(count % cols);
 		}
 
-		if(tmp.length > 0) {
-			for(let i = tmp.length; i < cols; i++){
-				tmp.push(0);
-			}
-			this.map.push(tmp);
-		}
 		this.cols = cols;
 		this.rows = this.map.length;
 
