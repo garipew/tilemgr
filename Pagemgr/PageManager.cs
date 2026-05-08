@@ -13,7 +13,6 @@ public class PageManager
 
 	private readonly ConcurrentDictionary<string, Page> _pages = new();
 
-	public bool TryGet(string key, out Page? p) => _pages.TryGetValue(key, out p);
 	public bool TryRemove(string key, out Page? p) => _pages.TryRemove(key, out p);
 	public bool TryAdd(string key, Page p) => _pages.TryAdd(key, p);
 
@@ -23,17 +22,17 @@ public class PageManager
 		_contextFactory = factory;
 	}
 
-	public Page GetOrCreate(string hash)
+	public bool TryGet(string hash, out Page? p)
 	{
-		Page? p;
 		if(_pages.TryGetValue(hash, out p) && p != null) {
-			return p;
+			return true;
 		}
 		using var context = _contextFactory.CreateDbContext();
 		Project? proj = context.Projects.Where(p => p.Hash == hash).FirstOrDefault();
-		if(proj != null) {
-			proj.canvas.DrawableLayer = Canvas.decompress(proj.canvas.Compressed);
+		if(proj == null) {
+			return false;
 		}
+		proj.canvas.DrawableLayer = Canvas.decompress(proj.canvas.Compressed);
 		return _pages.GetOrAdd(hash, new Page(proj, hash));
 	}
 

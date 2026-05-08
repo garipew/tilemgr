@@ -108,10 +108,14 @@ app.MapPost("/projects/new", async (HttpRequest request, PageManager mgr) =>
 	});
 
 app.MapDelete("/projects/{hash}", (string hash, PageManager mgr, ProjectContext ctx) => {
+		var root = Path.Combine(uploadsPath, "palettes");
 		Page? page;
-		mgr.TryRemove(hash, out page);
+		if(mgr.TryRemove(hash, out page) && page != null && page.Data != null) {
+			File.Delete(Path.Combine(root, $"{page.Data.ProjectName}_atlas.png"));
+		}
 		var proj = ctx.Projects.Where(p => p.Hash == hash).FirstOrDefault();
 		if(proj != null) {
+			File.Delete(Path.Combine(root, $"{proj.ProjectName}_atlas.png"));
 			ctx.Projects.Remove(proj);
 			ctx.SaveChanges();
 		}
