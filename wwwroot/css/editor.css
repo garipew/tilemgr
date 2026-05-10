@@ -22,8 +22,6 @@ main {
 }
 
 #canvas-container {
-	border: 10px solid var(--primary);
-	flex: 1;
 	display: flex;
 }
 
@@ -38,9 +36,12 @@ main {
 }
 
 #palette-container {
-	flex: 1;
-	border: 10px solid var(--primary);
 	width: 256px;
+}
+
+#palette {
+	min-width: 0;
+	min-height: 0;
 }
 
 canvas {

@@ -1,15 +1,8 @@
 @import "/css/shared.css";
 
-.container {
-	max-width: 900px;
-	margin: 40px auto;
-	padding: 0 16px;
-}
-
 h1 {
 	font-size: 22px;
 	margin-bottom: 16px;
-	color: var(--secondary);
 }
 
 .project {
@@ -38,7 +31,6 @@ h1 {
 
 .details {
 	font-size: 13px;
-	color: var(--text);
 	display: grid;
 	gap: 4px;
 }

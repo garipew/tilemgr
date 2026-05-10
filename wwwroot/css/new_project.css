@@ -4,12 +4,6 @@
 	box-sizing: border-box;
 }
 
-.container {
-	max-width: 520px;
-	margin: 48px auto;
-	padding: 20px;
-}
-
 h1 {
 	margin: 0 0 16px 0;
 	font-size: 20px;
@@ -22,14 +16,12 @@ form {
 
 label {
 	font-size: 13px;
-	color: var(--text);
 }
 
 input {
 	width: 100%;
 	padding: 6px 8px;
 	background: var(--bg);
-	color: var(--text);
 	border: 1px solid var(--primary);
 	border-radius: 4px;
 }

@@ -12,7 +12,6 @@
 
 body {
 	background: var(--bg);
-	color: var(--text);
 	margin: 0;
 }
 
@@ -47,4 +46,17 @@ a {
 	background: var(--bg);
 	color: var(--secondary);
 	cursor: pointer;
+}
+
+.canvas-container {
+	border: 10px solid var(--primary);
+	flex: 1;
+	min-width: 0;
+	min-height: 0;
+}
+
+.container {
+	margin: 48px auto;
+	padding: 20px;
+	max-width: 600px;
 }
